@@ -1,0 +1,15 @@
+{
+  "name": "laoyang-snippets",
+  "contributes": {
+    "snippets": [
+      {
+        "language": "python",
+        "path": "./snippets/python.json"
+      },
+      {
+        "language": "vhdl",
+        "path": "./snippets/vhdl.jsonc"
+      }
+    ]
+  }
+}
