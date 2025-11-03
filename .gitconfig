@@ -1,0 +1,16 @@
+[user]
+	email = 52125859+Paul-creator@users.noreply.github.com
+	name = Paul-creator
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+[safe]
+	directory = %(prefix)///Mac/Mac++/ExtendedStorage/Projects/DanielSturmaier/TOM
+	directory = /Mac/Mac++/ExtendedStorage/Projects/DanielSturmaier/TOM
+[core]
+	autocrlf = input
+	excludesFile = /Users/paulkronegger/.gitignore_global
+[http]
+	sslVerify = false
