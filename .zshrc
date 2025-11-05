@@ -70,42 +70,24 @@ pip() {
     fi
 }
 
-# # >>> mamba initialize >>>
-# # !! Contents within this block are managed by 'mamba init' !!
-# export MAMBA_EXE="/Users/paulkronegger/.micromamba/bin/micromamba";
-# export MAMBA_ROOT_PREFIX="/Users/paulkronegger/micromamba";
-# __mamba_setup="$('/Users/paulkronegger/.micromamba/bin/micromamba' shell hook --shell zsh --prefix '/Users/paulkronegger/micromamba' 2> /dev/null)"
-# if [ $? -eq 0 ]; then
-#     eval "$__mamba_setup"
-# else
-#     if [ -f "/Users/paulkronegger/micromamba/etc/profile.d/micromamba.sh" ]; then
-#         . "/Users/paulkronegger/micromamba/etc/profile.d/micromamba.sh"
-#     else
-#         export  PATH="/Users/paulkronegger/micromamba/bin:$PATH"  # extra space after export prevents interference from conda init
-#     fi
-# fi
-# unset __mamba_setup
-# # <<< mamba initialize <<<
-#
-#
-# # >>> conda initialize >>>
-# # !! Contents within this block are managed by 'conda init' !!
-# export CONDA_PREFIX="/Users/paulkronegger/miniconda3"
-# __conda_setup="$('/Users/paulkronegger/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-# if [ $? -eq 0 ]; then
-#     eval "$__conda_setup"
-# else
-#     if [ -f "/Users/paulkronegger/miniconda3/etc/profile.d/conda.sh" ]; then
-#         . "/Users/paulkronegger/miniconda3/etc/profile.d/conda.sh"
-#     else
-#         export PATH="/Users/paulkronegger/miniconda3/bin:$PATH"
-#     fi
-# fi
-# unset __conda_setup
-# # <<< conda initialize <<<
-# # conda activate p3.12
-# conda deactivate
 
+condainit() {
+  # >>> conda initialize >>>
+  # !! Contents within this block are managed by 'conda init' !!
+  export CONDA_PREFIX="/Users/paulkronegger/miniconda3"
+  __conda_setup="$('/Users/paulkronegger/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+  if [ $? -eq 0 ]; then
+      eval "$__conda_setup"
+  else
+      if [ -f "/Users/paulkronegger/miniconda3/etc/profile.d/conda.sh" ]; then
+          . "/Users/paulkronegger/miniconda3/etc/profile.d/conda.sh"
+      else
+          export PATH="/Users/paulkronegger/miniconda3/bin:$PATH"
+      fi
+  fi
+  unset __conda_setup
+  # <<< conda initialize <<<
+}
 
 # Google Cloud
 if [ -f '/Users/paulkronegger/google-cloud-sdk/completion.zsh.inc' ]; then . '/Users/paulkronegger/google-cloud-sdk/completion.zsh.inc'; fi
