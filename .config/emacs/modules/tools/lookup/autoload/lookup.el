@@ -95,6 +95,7 @@ This can be passed nil as its second argument to unset handlers for MODES. e.g.
                             'xref-backend-functions)
                       (make-list 5 async)
                       (make-list 5 (or (eq major-mode mode)
+                                       (memq mode (get major-mode 'derived-mode-extra-parents))
                                        (and (boundp mode)
                                             (symbol-value mode))))))))
         (add-hook hook fn)))))
@@ -223,14 +224,18 @@ This can be passed nil as its second argument to unset handlers for MODES. e.g.
       (+lookup--xref-show 'xref-backend-references identifier #'xref--show-xrefs)
     (cl-no-applicable-method nil)))
 
-(defun +lookup-dumb-jump-backend-fn (_identifier)
+(defun +lookup-dumb-jump-backend-fn (identifier)
   "Look up the symbol at point (or selection) with `dumb-jump', which conducts a
 project search with ag, rg, pt, or git-grep, combined with extra heuristics to
 reduce false positives.
 
 This backend prefers \"just working\" over accuracy."
   (and (require 'dumb-jump nil t)
-       (dumb-jump-go)))
+       ;; See: https://github.com/jacktasia/dumb-jump/issues/353
+       ;; This is a workaround for a workaround to actually both fall back to dumb-jump and use the xref integration for it.
+       (let ((xref-backend-functions '(dumb-jump-xref-activate))
+             (stop-infinite-dumb-jump-recursion t))
+         (+lookup-xref-definitions-backend-fn identifier))))
 
 (defun +lookup-project-search-backend-fn (identifier)
   "Conducts a simple project text search for IDENTIFIER.
@@ -441,7 +446,7 @@ Otherwise, falls back on `find-file-at-point'."
 (defun +lookup/synonyms (identifier &optional _arg)
   "Look up and insert a synonym for the word at point (or selection)."
   (interactive
-   (list (doom-thing-at-point-or-region 'word) ; TODO actually use this
+   (list (doom-thing-at-point-or-region 'word) ; TODO: actually use this
          current-prefix-arg))
   (message "Looking up synonyms for %S" identifier)
   (cond ((and +lookup-dictionary-prefer-offline

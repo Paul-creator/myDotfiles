@@ -56,8 +56,8 @@ Buffers that are considered unreal (see `doom-real-buffer-p') are dimmed with
             (prin1-to-string val))
            ((stringp val)
             (propertize (format "%S" val) 'face 'font-lock-string-face))
-           ((numberp val)
-            (propertize (format "%s" val) 'face 'highlight-numbers-number))
+           ((and (numberp val) (facep 'font-lock-number-face)) ; introduced in 29.1+
+            (propertize (format "%s" val) 'face 'font-lock-number-face))
            ((format "%s" val)))
      t)))
 
@@ -123,7 +123,7 @@ In the GUI, this is the same as `ivy-format-function-line'."
               :preselect (buffer-name (other-buffer (current-buffer)))
               :matcher #'ivy--switch-buffer-matcher
               :keymap ivy-switch-buffer-map
-              ;; NOTE A clever disguise, needed for virtual buffers.
+              ;; A clever disguise, needed for virtual buffers.
               :caller #'ivy-switch-buffer)))
 
 ;;;###autoload
@@ -160,10 +160,10 @@ If ARG (universal argument), open selection in other-window."
     (user-error "No completion session is active"))
   (require 'wgrep)
   (let ((caller (ivy-state-caller ivy-last)))
-    (if-let (occur-fn (plist-get +ivy-edit-functions caller))
+    (if-let* ((occur-fn (plist-get +ivy-edit-functions caller)))
         (ivy-exit-with-action
          (lambda (_) (funcall occur-fn)))
-      (if-let (occur-fn (plist-get ivy--occurs-list caller))
+      (if-let* ((occur-fn (plist-get ivy--occurs-list caller)))
           (let ((buffer (generate-new-buffer
                          (format "*ivy-occur%s \"%s\"*"
                                  (if caller (concat " " (prin1-to-string caller)) "")
@@ -265,7 +265,7 @@ The point of this is to avoid Emacs locking up indexing massive file trees."
            (replace-regexp-in-string
             "[! |]" (lambda (substr)
                       (cond ((and (string= substr " ")
-                                  (not (modulep! +fuzzy)))
+                                  (modulep! -fuzzy))
                              "  ")
                             ((string= substr "|")
                              "\\\\\\\\|")
@@ -322,7 +322,6 @@ If ARG (universal argument), include all files, even hidden or compressed ones."
 (defun +ivy/jump-list ()
   "Go to an entry in evil's (or better-jumper's) jumplist."
   (interactive)
-  ;; REVIEW Refactor me
   (let (buffers)
     (unwind-protect
         (ivy-read "jumplist: "
@@ -351,7 +350,7 @@ If ARG (universal argument), include all files, even hidden or compressed ones."
                   :require-match t
                   :action (lambda (cand)
                             (let ((mark (cdr cand)))
-                              (delq! (marker-buffer mark) buffers)
+                              (cl-callf2 delq (marker-buffer mark) buffers)
                               (mapc #'kill-buffer buffers)
                               (setq buffers nil)
                               (with-current-buffer (switch-to-buffer (marker-buffer mark))

@@ -1,40 +1,28 @@
 -- Autocmds are automatically loaded on the VeryLazy event
 -- Default autocmds that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/autocmds.lua
+--
 -- Add any additional autocmds here
+-- with `vim.api.nvim_create_autocmd`
+--
+-- Or remove existing autocmds by their group name (which is prefixed with `lazyvim_` for the defaults)
+-- e.g. vim.api.nvim_del_augroup_by_name("lazyvim_wrap_spell")
 
-local lspconfig = require("lspconfig")
-lspconfig.efm.setup({
-  init_options = { documentFormatting = true },
-  filetypes = { "tex" },
-  settings = {
-    rootMarkers = { ".git/" },
-    languages = {
-      tex = {
-        {
-          -- Format command: -w (in-place) und -m (kein Backup, sofern unterstützt)
-          formatCommand = "latexindent -w -m",
-          formatStdin = false, -- latexindent erwartet eine Datei, nicht stdin
-        },
-      },
-    },
-  },
+-- VHDL Formatting
+vim.api.nvim_create_autocmd("BufWritePost", {
+  callback = function(args)
+    if vim.bo[args.buf].filetype ~= "vhdl" then
+      return
+    end
+
+    local file = args.file
+    vim.fn.system({
+      "emacs",
+      "--batch",
+      file,
+      "--eval",
+      "(progn (require 'vhdl-mode) (vhdl-beautify-buffer) (save-buffer))",
+    })
+
+    vim.cmd("edit")
+  end,
 })
-
--- vim.api.nvim_create_autocmd("BufWritePost", {
---   pattern = "*.tex",
---   callback = function()
---     local filepath = vim.fn.expand("%:p")
---     vim.fn.jobstart({ "tex-fmt", filepath }, {
---       on_exit = function(_, exit_code)
---         vim.schedule(function()
---           if exit_code == 0 then
---             -- Reload the file to show changes
---             vim.cmd("edit")
---           else
---             print("tex-fmt failed with exit code " .. exit_code)
---           end
---         end)
---       end,
---     })
---   end,
--- })

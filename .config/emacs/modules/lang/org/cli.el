@@ -49,24 +49,31 @@ EXAMPLES:
                     (setq last-heading-pos current-heading-pos)))
                 (unless (or (org-in-commented-heading-p)
                             (org-in-archived-heading-p))
-                  (let* ((tags (org-get-tags-at))
+                  (let* ((headline-tags (org-get-tags))
                          (info (org-babel-get-src-block-info 'no-eval))
                          (src-lang (nth 0 info))
-                         (src-tfile (cdr (assq :tangle (nth 2 info)))))
+                         (src-tfile (cdr (assq :tangle (nth 2 info))))
+                         (src-noweb-ref (or (nth 4 info)
+                                            (cdr (assq :noweb-ref (nth 2 info))))))
+                    ;; a block which can be referenced via noweb may need to be
+                    ;; evaluated even if it will not be tangled per se
+                    (when-let* ((src-noweb-ref)
+                             (ob-library-name (concat "ob-" src-lang))
+                             ((locate-library ob-library-name)))
+                        (require (intern ob-library-name)))
+
                     (cond ((member "notangle" tags))
 
                           ((let* ((tags (seq-group-by (fn! (equal (car %) "--or")) tags))
                                   (or-tags  (mapcar #'cdr (cdr (assq t tags))))
-                                  (and-tags (mapcar #'cdr (cdr (assq nil tags))))
-                                  (all-tags (append or-tags and-tags)))
+                                  (and-tags (mapcar #'cdr (cdr (assq nil tags)))))
                              (and (or or-tags and-tags)
                                   (or (not and-tags)
-                                      (let ((a (cl-intersection and-tags all-tags :test #'string=))
+                                      (let ((a (cl-intersection and-tags headline-tags :test #'string=))
                                             (b and-tags))
-                                        (not (or (cl-set-difference a b :test #'equal)
-                                                 (cl-set-difference b a :test #'equal)))))
+                                        (cl-set-exclusive-or a b :test #'equal)))
                                   (or (not or-tags)
-                                      (cl-intersection or-tags all-tags :test #'string=))
+                                      (not (cl-intersection or-tags headline-tags :test #'string=)))
                                   t)))
 
                           ((or (not src-tfile)
@@ -133,7 +140,7 @@ EXAMPLES:
                 ;; Tangling doesn't expand #+INCLUDE directives, so we do it
                 ;; ourselves, since includes are so useful for literate configs!
                 (org-export-expand-include-keyword)
-                (if-let ((results (reverse (org-babel-tangle nil nil lang))))
+                (if-let* ((results (reverse (org-babel-tangle nil nil lang))))
                     (dolist (file results)
                       (if (not quiet?)
                           (print-group!

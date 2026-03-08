@@ -23,8 +23,8 @@ This must be set before `treemacs' has loaded.")
   (setq treemacs-follow-after-init t
         treemacs-is-never-other-window t
         treemacs-sorting 'alphabetic-case-insensitive-asc
-        treemacs-persist-file (concat doom-cache-dir "treemacs-persist")
-        treemacs-last-error-persist-file (concat doom-cache-dir "treemacs-last-error-persist"))
+        treemacs-persist-file (file-name-concat doom-profile-cache-dir "treemacs-persist")
+        treemacs-last-error-persist-file (file-name-concat doom-profile-cache-dir "treemacs-last-error-persist"))
   :config
   ;; Don't follow the cursor (it's more disruptive/jarring than helpful as a default)
   (treemacs-follow-mode -1)
@@ -64,8 +64,8 @@ This must be set before `treemacs' has loaded.")
     [return] #'treemacs-RET-action
     [tab]    #'treemacs-TAB-action
     "TAB"    #'treemacs-TAB-action
-    ;; REVIEW Fix #1875 to be consistent with C-w {v,s}, but this should really
-    ;;        be considered upstream.
+    ;; REVIEW: Fix #1875 to be consistent with C-w {v,s}, but this should really
+    ;;   be considered upstream.
     "o v"    #'treemacs-visit-node-horizontal-split
     "o s"    #'treemacs-visit-node-vertical-split))
 

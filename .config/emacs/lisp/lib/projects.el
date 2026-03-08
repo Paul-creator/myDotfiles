@@ -1,10 +1,10 @@
 ;;; lisp/lib/projects.el -*- lexical-binding: t; -*-
 
-;; HACK We forward declare these variables because they are let-bound in a
-;;      number of places with no guarantee that they've been defined yet (i.e.
-;;      that `projectile' is loaded). If a variable is defined with `defvar'
-;;      while it is lexically bound, you get "Defining as dynamic an already
-;;      lexical var" errors in Emacs 28+).
+;; HACK: We forward declare these variables because they are let-bound in a
+;;   number of places with no guarantee that they've been defined yet (i.e.
+;;   that `projectile' is loaded). If a variable is defined with `defvar' while
+;;   it is lexically bound, you get "Defining as dynamic an already lexical var"
+;;   errors in Emacs 28+).
 ;;;###autoload (defvar projectile-project-root nil)
 ;;;###autoload (defvar projectile-enable-caching (not noninteractive))
 ;;;###autoload (defvar projectile-require-project-root 'prompt)
@@ -119,8 +119,8 @@ Returns nil if not in a project."
   "Return the name of the current project.
 
 Returns '-' if not in a valid project."
-  (if-let (project-root (or (doom-project-root dir)
-                            (if dir (expand-file-name dir))))
+  (if-let* ((project-root (or (doom-project-root dir)
+                              (if dir (expand-file-name dir)))))
       (funcall projectile-project-name-function project-root)
     "-"))
 
@@ -151,7 +151,7 @@ If DIR is not a project, it will be indexed (but not cached)."
             ;; Intentionally avoid `helm-projectile-find-file', because it runs
             ;; asynchronously, and thus doesn't see the lexical
             ;; `default-directory'
-            (if (doom-module-p :completion 'ivy)
+            (if (doom-module-active-p :completion 'ivy)
                 #'counsel-projectile-find-file
               #'projectile-find-file)))
           ((and (bound-and-true-p ivy-mode)
@@ -160,10 +160,10 @@ If DIR is not a project, it will be indexed (but not cached)."
           ((and (bound-and-true-p helm-mode)
                 (fboundp 'helm-find-files))
            (call-interactively #'helm-find-files))
-          ((when-let* ((project-current-directory-override t)
+          ((when-let* ((project-current-directory-override dir)
                        (pr (project-current t dir)))
              (condition-case _
-                 (project-find-file-in nil nil pr)
+                 (project-find-file-in nil (list dir) pr t)
                ;; FIX: project.el throws errors if DIR is an empty directory,
                ;;   which is poor UX.
                (wrong-type-argument
@@ -175,9 +175,9 @@ If DIR is not a project, it will be indexed (but not cached)."
   "Traverse a file structure starting linearly from DIR."
   (let ((default-directory (file-truename (expand-file-name dir))))
     (call-interactively
-     (cond ((doom-module-p :completion 'ivy)
+     (cond ((doom-module-active-p :completion 'ivy)
             #'counsel-find-file)
-           ((doom-module-p :completion 'helm)
+           ((doom-module-active-p :completion 'helm)
             #'helm-find-files)
            (#'find-file)))))
 

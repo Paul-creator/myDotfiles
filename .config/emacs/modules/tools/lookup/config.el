@@ -25,6 +25,7 @@
             ("DuckDuckGo"        +lookup--online-backend-duckduckgo "https://duckduckgo.com/?q=%s")
             ("DevDocs.io"        "https://devdocs.io/#q=%s")
             ("StackOverflow"     "https://stackoverflow.com/search?q=%s")
+            ("StackExchange"     "https://stackexchange.com/search?q=%s")
             ("Github"            "https://github.com/search?ref=simplesearch&q=%s")
             ("Youtube"           "https://youtube.com/results?aq=f&oq=&search_query=%s")
             ("Wolfram alpha"     "https://wolframalpha.com/input/?i=%s")
@@ -155,15 +156,6 @@ Dictionary.app behind the scenes to get definitions.")
 (global-set-key [remap xref-find-references]  #'+lookup/references)
 
 (after! xref
-  ;; We already have `projectile-find-tag' and `evil-jump-to-tag', no need for
-  ;; xref to be one too.
-  (remove-hook 'xref-backend-functions #'etags--xref-backend)
-  ;; ...however, it breaks `projectile-find-tag', unless we put it back.
-  (defadvice! +lookup--projectile-find-tag-a (fn)
-    :around #'projectile-find-tag
-    (let ((xref-backend-functions '(etags--xref-backend t)))
-      (funcall fn)))
-
   ;; This integration is already built into evil
   (unless (modulep! :editor evil)
     ;; Use `better-jumper' instead of xref's marker stack
@@ -176,8 +168,9 @@ Dictionary.app behind the scenes to get definitions.")
     (setq xref-show-definitions-function #'ivy-xref-show-defs
           xref-show-xrefs-function       #'ivy-xref-show-xrefs)
 
-    ;; HACK Fix #4386: `ivy-xref-show-xrefs' calls `fetcher' twice, which has
-    ;; side effects that breaks in some cases (i.e. on `dired-do-find-regexp').
+    ;; HACK: Fix #4386: `ivy-xref-show-xrefs' calls `fetcher' twice, which has
+    ;;   side effects that breaks in some cases (i.e. on
+    ;;   `dired-do-find-regexp').
     (defadvice! +lookup--fix-ivy-xrefs (fn fetcher alist)
       :around #'ivy-xref-show-xrefs
       (when (functionp fetcher)
@@ -206,7 +199,7 @@ Dictionary.app behind the scenes to get definitions.")
   (add-hook '+lookup-documentation-functions #'+lookup-dash-docsets-backend-fn)
   :config
   (setq dash-docs-enable-debugging init-file-debug
-        dash-docs-docsets-path (concat doom-data-dir "docsets/")
+        dash-docs-docsets-path (file-name-concat doom-profile-data-dir "docsets/")
         dash-docs-min-length 2
         dash-docs-browser-func #'eww)
 

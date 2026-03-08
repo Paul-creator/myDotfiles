@@ -3,9 +3,8 @@
 
 (package! hideshow :built-in t)
 
-(package! vimish-fold :pin "a6501cbfe3db791f9ca17fd986c7202a87f3adb8")
+(package! vimish-fold :pin "f71f374d28a83e5f15612fa64aac1b2e78be2dcd")
 (when (modulep! :editor evil)
   (package! evil-vimish-fold :pin "b6e0e6b91b8cd047e80debef1a536d9d49eef31a"))
 (when (modulep! :tools tree-sitter)
-  (package! ts-fold :pin "55f80a202a8f7582a1c1b0bdccc9963ab2c4c54a"
-    :recipe (:host github :repo "emacs-tree-sitter/ts-fold")))
+  (package! treesit-fold :pin "d70c5f7240a8a48819421260c9a018c884a41111"))

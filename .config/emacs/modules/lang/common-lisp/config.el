@@ -14,7 +14,6 @@
 
 ;;;###package lisp-mode
 (defvar inferior-lisp-program "sbcl")
-(add-hook 'lisp-mode-hook #'rainbow-delimiters-mode)
 
 
 (use-package! sly
@@ -38,13 +37,13 @@
   ;; This needs to be appended so it fires later than `sly-editing-mode'
   (add-hook 'lisp-mode-local-vars-hook #'sly-lisp-indent-compatibility-mode 'append)
 
-  ;; HACK Ensures that sly's contrib modules are loaded as soon as possible, but
-  ;;      also as late as possible, so users have an opportunity to override
-  ;;      `sly-contrib' in an `after!' block.
+  ;; HACK: Ensures that sly's contrib modules are loaded as soon as possible,
+  ;;   but also as late as possible, so users have an opportunity to override
+  ;;   `sly-contrib' in an `after!' block.
   (add-hook! 'after-init-hook (after! sly (sly-setup)))
 
   :config
-  (setq sly-mrepl-history-file-name (concat doom-cache-dir "sly-mrepl-history")
+  (setq sly-mrepl-history-file-name (file-name-concat doom-profile-cache-dir "sly-mrepl-history")
         sly-kill-without-query-p t
         sly-net-coding-system 'utf-8-unix
         ;; Doom defaults to non-fuzzy search, because it is faster and more
@@ -80,7 +79,9 @@
       "Attempt to auto-start sly when opening a lisp buffer."
       (cond ((or (doom-temp-buffer-p (current-buffer))
                  (sly-connected-p)))
-            ((executable-find (car (split-string inferior-lisp-program)))
+            ((executable-find (car (if (listp inferior-lisp-program)
+                                       inferior-lisp-program
+                                     (split-string inferior-lisp-program))))
              (let ((sly-auto-start 'always))
                (sly-auto-start)
                (add-hook 'kill-buffer-hook #'+common-lisp--cleanup-sly-maybe-h nil t)))

@@ -1,14 +1,22 @@
 ;; -*- no-byte-compile: t; -*-
 ;;; app/wanderlust/packages.el
 
-;; HACK These are wanderlust's dependencies (wanderlust depends on semi, semi
-;;      depends on flim, flim on apel), but they all have non-standard default
-;;      branches which straight cannot detect without our help.
-(package! apel :recipe (:branch "apel-wl") :pin "1a6fd3bab2cc6b0a450c2d801f77a1c9da0f72fb")
-(package! flim :recipe (:branch "flim-1_14-wl") :pin "23bb29d70a13cada2eaab425ef80071564586a6d")
-(package! semi :recipe (:branch "semi-1_14-wl") :pin "85a52b899ac89be504d9e38d8d406bba98f4b0b3")
+;; HACK: These are wanderlust's dependencies (wanderlust depends on semi, semi
+;;   depends on flim, flim on apel), but they all have non-standard default
+;;   branches which straight cannot detect without our help.
+(package! apel
+  :recipe (:host github :repo "wanderlust/apel" :branch "apel-wl")
+  :pin "2383abfd3a27c094ae9095b05103167cf810379b")
+(package! flim
+  :recipe (:host github :repo "wanderlust/flim" :branch "flim-1_14-wl")
+  :pin "392c29de0acdd5d309023c9f15df49eeb063a2fa")
+(package! semi
+  :recipe (:host github :repo "wanderlust/semi" :branch "semi-1_14-wl")
+  :pin "5edbb0d925845a5c59abc03003569178a13d862f")
 
-(package! wanderlust :pin "8b413b33cdb5a1b715f99a3919573fde2cfb3053")
+(package! wanderlust
+  :recipe (:host github :repo "wanderlust/wanderlust")
+  :pin "06ec9fa3979d6ff3f691bed0989e2a79fef71116")
 
 (when (modulep! +xface)
   (package! x-face-e21

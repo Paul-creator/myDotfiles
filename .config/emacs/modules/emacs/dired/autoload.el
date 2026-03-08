@@ -31,20 +31,5 @@ sidebars)."
         (setq win nil))
       (unless win
         (call-interactively #'dirvish-side))
-      (when-let* (((not dirvish--this))
-                  (dir (or (dirvish--get-project-root) default-directory))
-                  (win (dirvish-side--session-visible-p))
-                  (dv (with-selected-window win (dirvish-curr)))
-                  ((not (active-minibuffer-window)))
-                  (file buffer-file-name))
-        (with-selected-window win
-          (when dir
-            (setq dirvish--this dv)
-            (let (buffer-list-update-hook) (dirvish-find-entry-a dir))
-            (if dirvish-side-auto-expand (dirvish-subtree-expand-to file)
-              (dired-goto-file file))
-            (dirvish-prop :cus-header 'dirvish-side-header)
-            (dirvish--setup-mode-line (car (dv-layout dv)))
-            (dirvish-update-body-h))
-          (setq dirvish--this nil)))))
+      (dirvish-side--auto-jump)))
   (select-window (dirvish-side--session-visible-p)))

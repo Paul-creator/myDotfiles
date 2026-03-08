@@ -2,7 +2,7 @@
 ;;; Commentary:
 ;;; Code:
 
-(load! "packages")
+(doom-require 'doom-lib 'packages)
 
 
 ;;
@@ -32,14 +32,10 @@ libraries. It is the equivalent of the following shell commands:
     $ cd ~/.emacs.d
     $ git pull --rebase
     $ doom sync -u"
-  (let* ((force? (doom-cli-context-suppress-prompts-p context))
-         (sync-cmd (append '("sync" "-u")
-                           (if aot? '("--aot"))
-                           (if nobuild? '("-B"))
-                           (if jobs `("-j" ,jobs)))))
+  (let ((force? (doom-cli-context-suppress-prompts-p context)))
     (cond
      (packages?
-      ;; HACK It's messy to use straight to upgrade straight, due to the
+      ;; HACK: It's messy to use straight to upgrade straight, due to the
       ;;   potential for backwards incompatibility, so we staticly check if
       ;;   Doom's `package!' declaration for straight has changed. If it has,
       ;;   delete straight so 'doom sync' will install the new version for us.
@@ -50,7 +46,10 @@ libraries. It is the equivalent of the following shell commands:
           (print! (item "Preparing straight for an update"))
           (delete-directory (doom-path straight-base-dir "straight/repos/straight.el")
                             'recursive)))
-      (call! sync-cmd)
+      (call! (append '("sync" "-u")
+                     (if aot? '("--aot"))
+                     (if nobuild? '("-B"))
+                     (if jobs `("-j" ,jobs))))
       (print! (success "Finished upgrading Doom Emacs")))
 
      ((doom-cli-upgrade context force? force?)
@@ -62,10 +61,7 @@ libraries. It is the equivalent of the following shell commands:
              (if aot? "--aot")
              (if nobuild? "-B")
              (if force? "--force")
-             (if jobs (format "--jobs=%d" jobs))))
-
-     ((print! "Doom is up-to-date!")
-      (call! sync-cmd)))))
+             (if jobs (format "--jobs=%d" jobs)))))))
 
 
 ;;
@@ -144,10 +140,10 @@ libraries. It is the equivalent of the following shell commands:
                     (ignore (print! (error "Aborted")))
                   (print! (start "Upgrading Doom Emacs..."))
                   (print-group!
-                   (doom-cli-context-put context 'straight-recipe (doom-upgrade--get-straight-recipe))
-                   (or (and (zerop (car (sh! "git" "reset" "--hard" target-remote)))
-                            (equal (cdr (sh! "git" "rev-parse" "HEAD")) new-rev))
-                       (error "Failed to check out %s" (substring new-rev 0 10)))))))))
+                    (doom-cli-context-put context 'straight-recipe (doom-upgrade--get-straight-recipe))
+                    (or (and (zerop (car (sh! "git" "reset" "--hard" target-remote)))
+                             (equal (cdr (sh! "git" "rev-parse" "HEAD")) new-rev))
+                        (error "Failed to check out %s" (substring new-rev 0 10)))))))))
         (ignore-errors
           (sh! "git" "branch" "-D" target-remote)
           (sh! "git" "remote" "remove" doom-upgrade-remote))))))

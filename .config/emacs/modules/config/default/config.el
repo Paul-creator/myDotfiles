@@ -31,49 +31,51 @@
       avy-single-candidate-jump nil)
 
 
-(after! epa
-  ;; With GPG 2.1+, this forces gpg-agent to use the Emacs minibuffer to prompt
-  ;; for the key passphrase.
-  (set 'epg-pinentry-mode 'loopback)
-  ;; Default to the first enabled and non-expired key in your keyring.
-  (setq-default
-   epa-file-encrypt-to
-   (or (default-value 'epa-file-encrypt-to)
-       (unless (string-empty-p user-full-name)
-         (when-let (context (ignore-errors (epg-make-context)))
-           (cl-loop for key in (epg-list-keys context user-full-name 'public)
-                    for subkey = (car (epg-key-sub-key-list key))
-                    if (not (memq 'disabled (epg-sub-key-capability subkey)))
-                    if (< (or (epg-sub-key-expiration-time subkey) 0)
-                          (time-to-seconds))
-                    collect (epg-sub-key-fingerprint subkey))))
-       user-mail-address))
-   ;; And suppress prompts if epa-file-encrypt-to has a default value (without
-   ;; overwriting file-local values).
-  (defadvice! +default--dont-prompt-for-keys-a (&rest _)
-    :before #'epa-file-write-region
-    (unless (local-variable-p 'epa-file-encrypt-to)
-      (setq-local epa-file-encrypt-to (default-value 'epa-file-encrypt-to)))))
+(when (modulep! +gnupg)
+  ;; By default, Emacs stores `authinfo' in $HOME and in plain-text. Let's not
+  ;; do that, mkay? This file stores usernames, passwords, and other treasures
+  ;; for the aspiring malicious third party. You'll need a GPG setup though.
+  (setq auth-sources (list (file-name-concat doom-profile-state-dir "authinfo.gpg")
+                           "~/.authinfo.gpg"))
+
+  (after! epa
+    ;; With GPG 2.1+, this forces gpg-agent to use the Emacs minibuffer to
+    ;; prompt for the key passphrase.
+    (set 'epg-pinentry-mode 'loopback)
+    ;; Default to the first enabled and non-expired key in your keyring.
+    (setq-default
+     epa-file-encrypt-to
+     (or (default-value 'epa-file-encrypt-to)
+         (unless (string-empty-p user-full-name)
+           (when-let (context (ignore-errors (epg-make-context)))
+             (cl-loop for key in (epg-list-keys context user-full-name 'public)
+                      for subkey = (car (epg-key-sub-key-list key))
+                      if (not (memq 'disabled (epg-sub-key-capability subkey)))
+                      if (< (or (epg-sub-key-expiration-time subkey) 0)
+                            (time-to-seconds))
+                      collect (epg-sub-key-fingerprint subkey))))
+         user-mail-address))
+    ;; And suppress prompts if epa-file-encrypt-to has a default value (without
+    ;; overwriting file-local values).
+    (defadvice! +default--dont-prompt-for-keys-a (&rest _)
+      :before #'epa-file-write-region
+      (unless (local-variable-p 'epa-file-encrypt-to)
+        (setq-local epa-file-encrypt-to (default-value 'epa-file-encrypt-to))))))
 
 
 (after! woman
   ;; The woman-manpath default value does not necessarily match man. If we have
   ;; man available but aren't using it for performance reasons, we can extract
   ;; its manpath.
-  (let ((manpath (cond
-                  ((executable-find "manpath")
-                   (split-string (cdr (doom-call-process "manpath"))
-                                 path-separator t))
-                  ((executable-find "man")
-                   (split-string (cdr (doom-call-process "man" "--path"))
-                                 path-separator t)))))
-    (when manpath
-      (setq woman-manpath manpath))))
-
-
-;;;###package tramp
-(unless (featurep :system 'windows)
-  (setq tramp-default-method "ssh")) ; faster than the default scp
+  (when-let*
+      ((path (cond
+              ((executable-find "manpath")
+               (split-string (cdr (doom-call-process "manpath" "-q"))
+                             path-separator t))
+              ((executable-find "man")
+               (split-string (cdr (doom-call-process "man" "--path"))
+                             path-separator t)))))
+    (setq woman-manpath path)))
 
 
 ;;
@@ -119,19 +121,19 @@
     (sp-local-pair sp-lisp-modes "(" ")" :unless '(:rem sp-point-before-same-p))
 
     ;; Major-mode specific fixes
-    (sp-local-pair 'ruby-mode "{" "}"
+    (sp-local-pair '(ruby-mode ruby-ts-mode) "{" "}"
                    :pre-handlers '(:rem sp-ruby-pre-handler)
                    :post-handlers '(:rem sp-ruby-post-handler))
 
     ;; Don't eagerly escape Swift style string interpolation
-    (sp-local-pair 'swift-mode "\\(" ")" :when '(sp-in-string-p))
+    (sp-local-pair '(swift-mode swift-ts-mode) "\\(" ")" :when '(sp-in-string-p))
 
     ;; Don't do square-bracket space-expansion where it doesn't make sense to
-    (sp-local-pair '(emacs-lisp-mode org-mode markdown-mode gfm-mode)
+    (sp-local-pair '(emacs-lisp-mode org-mode markdown-mode markdown-ts-mode gfm-mode)
                    "[" nil :post-handlers '(:rem ("| " "SPC")))
 
     ;; Reasonable default pairs for HTML-style comments
-    (sp-local-pair (append sp--html-modes '(markdown-mode gfm-mode))
+    (sp-local-pair (append sp--html-modes '(markdown-mode markdown-ts-mode gfm-mode))
                    "<!--" "-->"
                    :unless '(sp-point-before-word-p sp-point-before-same-p)
                    :actions '(insert) :post-handlers '(("| " "SPC")))
@@ -164,13 +166,14 @@
                (looking-at-p "[ 	]*#include[^<]+"))))
 
       ;; ...and leave it to smartparens
-      (sp-local-pair '(c++-mode objc-mode)
+      (sp-local-pair '(c++-mode c++-ts-mode objc-mode)
                      "<" ">"
                      :when '(+default-cc-sp-point-is-template-p
                              +default-cc-sp-point-after-include-p)
                      :post-handlers '(("| " "SPC")))
 
-      (sp-local-pair '(c-mode c++-mode objc-mode java-mode)
+      (sp-local-pair '(c-mode c++-mode objc-mode java-mode
+                       c-ts-mode c++-ts-mode java-ts-mode)
                      "/*!" "*/"
                      :post-handlers '(("||\n[i]" "RET") ("[d-1]< | " "SPC"))))
 
@@ -180,8 +183,14 @@
         (newline)
         (indent-according-to-mode)))
     (sp-local-pair
-     '(js2-mode typescript-mode rjsx-mode rust-mode c-mode c++-mode objc-mode
-       csharp-mode java-mode php-mode css-mode scss-mode less-css-mode
+     '(js-mode js-ts-mode typescript-mode typescript-ts-mode tsx-ts-mode
+       rust-mode rust-ts-mode rustic-mode
+       c-mode c++-mode objc-mode c-ts-mode c++-ts-mode
+       csharp-mode csharp-ts-mode
+       java-mode java-ts-mode
+       php-mode php-ts-mode
+       css-mode css-ts-mode
+       scss-mode less-css-mode
        stylus-mode scala-mode)
      "/*" "*/"
      :actions '(insert)
@@ -197,11 +206,11 @@
                        :post-handlers '(("| " "SPC") ("|[i]*)[d-2]" "RET")))))
 
     (after! smartparens-markdown
-      (sp-with-modes '(markdown-mode gfm-mode)
+      (sp-with-modes '(markdown-mode markdown-ts-mode gfm-mode)
         (sp-local-pair "```" "```" :post-handlers '(:add ("||\n[i]" "RET")))
 
         ;; The original rules for smartparens had an odd quirk: inserting two
-        ;; asterixex would replace nearby quotes with asterixes. These two rules
+        ;; asterisks would replace nearby quotes with asterisks. These two rules
         ;; set out to fix this.
         (sp-local-pair "**" nil :actions :rem)
         (sp-local-pair "*" "*"
@@ -213,32 +222,36 @@
                        :post-handlers '(("[d1]" "SPC") ("|*" "*"))))
 
       ;; This keybind allows * to skip over **.
-      (map! :map markdown-mode-map
-            :ig "*" (general-predicate-dispatch nil
-                      (looking-at-p "\\*\\* *")
-                      (cmd! (forward-char 2)))))
+      (let ((fn (general-predicate-dispatch nil
+                  (looking-at-p "\\*\\* *")
+                  (cmd! (forward-char 2)))))
+        (map! :map markdown-mode-map :ig "*" fn)
+        (map! :after markdown-ts-mode :map markdown-ts-mode-map :ig "*" fn)))
 
     ;; Removes haskell-mode trailing braces
     (after! smartparens-haskell
-      (sp-with-modes '(haskell-mode haskell-interactive-mode)
-        (sp-local-pair "{-" "-}" :actions :rem)
-        (sp-local-pair "{-#" "#-}" :actions :rem)
-        (sp-local-pair "{-@" "@-}" :actions :rem)
+      (sp-with-modes '(haskell-mode haskell-ts-mode haskell-interactive-mode)
+        (sp-local-pair "{-" "-}" :actions nil)
+        (sp-local-pair "{-#" "#-}" :actions nil)
+        (sp-local-pair "{-@" "@-}" :actions nil)
         (sp-local-pair "{-" "-")
         (sp-local-pair "{-#" "#-")
         (sp-local-pair "{-@" "@-")))
 
     (after! smartparens-python
-      (sp-with-modes 'python-mode
+      (sp-with-modes '(python-mode python-ts-mode)
         ;; Automatically close f-strings
         (sp-local-pair "f\"" "\"")
         (sp-local-pair "f\"\"\"" "\"\"\"")
         (sp-local-pair "f'''" "'''")
         (sp-local-pair "f'" "'"))
       ;; Original keybind interferes with smartparens rules
-      (define-key python-mode-map (kbd "DEL") nil)
+      (after! python
+        (define-key (or (bound-and-true-p python-base-mode-map)
+                        python-mode-map)
+                    (kbd "DEL") nil))
       ;; Interferes with the def snippet in doom-snippets
-      ;; TODO Fix this upstream, in doom-snippets, instead
+      ;; TODO: Fix this upstream, in doom-snippets, instead
       (setq sp-python-insert-colon-in-function-definitions nil))))
 
 
@@ -260,16 +273,15 @@
 ;;  e) do none of this when inside a string
 (advice-add #'delete-backward-char :override #'+default--delete-backward-char-a)
 
-;; HACK Makes `newline-and-indent' continue comments (and more reliably).
-;;      Consults `doom-point-in-comment-p' to detect a commented region and uses
-;;      that mode's `comment-line-break-function' to continue comments.  If
-;;      neither exists, it will fall back to the normal behavior of
-;;      `newline-and-indent'.
+;; HACK: Makes `newline-and-indent' continue comments (and more reliably).
+;;   Consults `doom-point-in-comment-p' to detect a commented region and uses
+;;   that mode's `comment-line-break-function' to continue comments.  If neither
+;;   exists, it will fall back to the normal behavior of `newline-and-indent'.
 ;;
-;;      We use an advice here instead of a remapping because many modes define
-;;      and remap to their own newline-and-indent commands, and tackling all
-;;      those cases was judged to be more work than dealing with the edge cases
-;;      on a case by case basis.
+;;   We use an advice here instead of a remapping because many modes define and
+;;   remap to their own newline-and-indent commands, and tackling all those
+;;   cases was judged to be more work than dealing with the edge cases on a case
+;;   by case basis.
 (defadvice! +default--newline-indent-and-continue-comments-a (&rest _)
   "A replacement for `newline-and-indent'.
 Continues comments if executed from a commented line."
@@ -311,12 +323,14 @@ Continues comments if executed from a commented line."
         "s-c" (if (featurep 'evil) #'evil-yank #'copy-region-as-kill)
         "s-v" #'yank
         "s-s" #'save-buffer
-        "s-x" #'execute-extended-command
-        :v "s-x" #'kill-region
-        ;; Buffer-local font scaling
-        "s-+" #'doom/reset-font-size
+        "s-x" (cmds! (doom-region-active-p) #'kill-region
+                     #'execute-extended-command)
+        "s-0" #'doom/reset-font-size
+        ;; Global font scaling
         "s-=" #'doom/increase-font-size
+        "s-+" #'doom/increase-font-size
         "s--" #'doom/decrease-font-size
+        "s-_" #'doom/decrease-font-size
         ;; Conventional text-editing keys & motions
         "s-a" #'mark-whole-buffer
         "s-/" (cmd! (save-excursion (comment-line 1)))
@@ -327,7 +341,19 @@ Continues comments if executed from a commented line."
         :gi  [s-right]     #'doom/forward-to-last-non-comment-or-eol
         :gi  [M-backspace] #'backward-kill-word
         :gi  [M-left]      #'backward-word
-        :gi  [M-right]     #'forward-word))
+        :gi  [M-right]     #'forward-word
+        (:when (modulep! :ui workspaces)
+         :g "s-t"   #'+workspace/new
+         :g "s-T"   #'+workspace/display
+         :n "s-1"   #'+workspace/switch-to-0
+         :n "s-2"   #'+workspace/switch-to-1
+         :n "s-3"   #'+workspace/switch-to-2
+         :n "s-4"   #'+workspace/switch-to-3
+         :n "s-5"   #'+workspace/switch-to-4
+         :n "s-6"   #'+workspace/switch-to-5
+         :n "s-7"   #'+workspace/switch-to-6
+         :n "s-8"   #'+workspace/switch-to-7
+         :n "s-9"   #'+workspace/switch-to-final)))
 
 
 ;;
@@ -337,7 +363,7 @@ Continues comments if executed from a commented line."
 ;; universal.
 (define-key! help-map
   ;; new keybinds
-  "'"    #'describe-char
+  "'"    #'doom/describe-char
   "u"    #'doom/help-autodefs
   "E"    #'doom/sandbox
   "M"    #'doom/describe-active-minor-mode
@@ -375,8 +401,7 @@ Continues comments if executed from a commented line."
   ;; replaces `apropos-documentation' b/c `apropos' covers this
   "d"    nil
   "db"   #'doom/report-bug
-  "dc"   #'doom/goto-private-config-file
-  "dC"   #'doom/goto-private-init-file
+  "dc"   #'doom/open-private-config
   "dd"   #'doom-debug-mode
   "df"   #'doom/help-faq
   "dh"   #'doom/help
@@ -386,7 +411,6 @@ Continues comments if executed from a commented line."
   "dn"   #'doom/help-news
   "dN"   #'doom/help-search-news
   "dpc"  #'doom/help-package-config
-  "dpd"  #'doom/goto-private-packages-file
   "dph"  #'doom/help-package-homepage
   "dpp"  #'doom/help-packages
   "ds"   #'doom/help-search-headings
@@ -465,7 +489,9 @@ Continues comments if executed from a commented line."
            :filter ,(lambda (cmd)
                       (pcase +corfu-want-ret-to-confirm
                         ('nil (corfu-quit) nil)
-                        ('t (if (>= corfu--index 0) cmd))
+                        ('t (if (or (>= corfu--index 0)
+                                    (and prefix-arg (bound-and-true-p corfu-indexed-mode)))
+                                cmd))
                         ('both (funcall-interactively cmd) nil)
                         ('minibuffer
                          (if (minibufferp nil t)
@@ -517,9 +543,9 @@ Continues comments if executed from a commented line."
           :gi "TAB" cmds-tab
           :gi [tab] cmds-tab))
 
-  ;; Smarter C-a/C-e for both Emacs and Evil. C-a will jump to indentation.
-  ;; Pressing it again will send you to the true bol. Same goes for C-e, except
-  ;; it will ignore comments+trailing whitespace before jumping to eol.
+  ;; Smarter readline keybinds (C-a/C-e) for both Emacs and Evil. Changes C-a to
+  ;; also cycle between true BOL and BOI (indentation). Same for C-e, but with
+  ;; EOL and EOI (ignoring comments+trailing whitespace).
   (map! :gi "C-a" #'doom/backward-to-bol-or-indent
         :gi "C-e" #'doom/forward-to-last-non-comment-or-eol
         ;; Standardizes the behavior of modified RET to match the behavior of
@@ -532,12 +558,9 @@ Continues comments if executed from a commented line."
         ;; C-<mouse-scroll-down> = text scale decrease
         [C-down-mouse-2] (cmd! (text-scale-set 0))
 
-        ;; auto-indent on newline by default
-        :gi [remap newline] #'newline-and-indent
-        ;; insert literal newline
-        :i  "S-RET"         #'+default/newline
-        :i  [S-return]      #'+default/newline
-        :i  "C-j"           #'+default/newline
+        ;; Do opposite of `electric-indent-mode'
+        :i "S-RET"         #'electric-newline-and-maybe-indent
+        :i [S-return]      #'electric-newline-and-maybe-indent
 
         ;; Add new item below current (without splitting current line).
         :gi "C-RET"         #'+default/newline-below

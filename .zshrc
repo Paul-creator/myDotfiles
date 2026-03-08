@@ -8,6 +8,8 @@ source $ZSH/oh-my-zsh.sh
 LANG="en_US.UTF-8"
 # LANG="en_AT.UTF-8" // this makes errors for kitty so äüö won't work
 
+alias nano="nvim"
+
 # used for /opt/bin/gtkwave (for vhdl)
 export PATH=/opt/bin:$PATH
 
@@ -16,6 +18,7 @@ alias iic-osic-tools="eda"
 
 # homebrew
 export PATH=/opt/homebrew/bin:$PATH
+export PATH="/opt/homebrew/sbin:$PATH"
 if type brew &>/dev/null
 then
   FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
@@ -58,17 +61,17 @@ complete -o nospace -C /opt/homebrew/bin/terraform terraform
 export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
 
 alias python="/opt/homebrew/bin/python3"
-pip() {
-    if [ "$1" = "i" ]; then
-        shift
-        /opt/homebrew/bin/pip3 install "$@"
-    elif [ "$1" = "ls" ]; then
-        shift
-        /opt/homebrew/bin/pip3 list "$@"
-    else
-        /opt/homebrew/bin/pip3 "$@"
-    fi
-}
+# pip() {
+#     if [ "$1" = "i" ]; then
+#         shift
+#         /opt/homebrew/bin/pip3 install "$@"
+#     elif [ "$1" = "ls" ]; then
+#         shift
+#         /opt/homebrew/bin/pip3 list "$@"
+#     else
+#         /opt/homebrew/bin/pip3 "$@"
+#     fi
+# }
 
 
 condainit() {
@@ -382,13 +385,6 @@ if command -v helm > /dev/null 2>&1; then
     source <(helm completion zsh)
 fi
 
-# bun completions
-[ -s "/Users/paulkronegger/.bun/_bun" ] && source "/Users/paulkronegger/.bun/_bun"
-
-# bun
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
-
 # dotnet-tools
 export PATH="$PATH:/Users/paulkronegger/.dotnet/tools"
 
@@ -407,10 +403,6 @@ if command -v ngrok &>/dev/null; then
   eval "$(ngrok completion)"
 fi
  
-if [[ "$PWD" == "$HOME" ]]; then
-  cd ~/Downloads/
-fi
-
 # for vhdl
 export PATH=/opt/ghdl-macos-11-mcode/bin:$PATH
 
@@ -423,11 +415,21 @@ PERL_MM_OPT="INSTALL_BASE=/Users/paulkronegger/perl5"; export PERL_MM_OPT;
 alias youtube-transcript-en="yt-dlp --write-auto-sub --sub-lang en --convert-subs srt --skip-download"
 alias youtube-transcript-de="yt-dlp --write-auto-sub --sub-lang de --convert-subs srt --skip-download"
 
-if command -v tmux >/dev/null 2>&1 && [ -z "$TMUX" ]; then
-    exec tmux 
-fi
-
 # dotfiles
 alias dot='git --git-dir=$HOME/.dotfiles --work-tree=$HOME'
+
+is_real_terminal() {
+  [[ -z "$VSCODE_PID" ]] &&
+  [[ "$TERM_PROGRAM" != "vscode" ]] &&
+  [[ "$TERM_PROGRAM" != "JetBrains-JediTerm" ]]
+  [[ -z "$INSIDE_EMACS" ]]
+}
+
+if is_real_terminal; then
+  # cd "$HOME/Downloads"
+  if command -v tmux >/dev/null 2>&1 && [ -z "$TMUX" ]; then
+      exec tmux 
+  fi
+fi
 
 # zprof

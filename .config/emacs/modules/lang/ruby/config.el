@@ -22,11 +22,7 @@
   (when (modulep! +lsp)
     (add-hook 'ruby-mode-local-vars-hook #'lsp! 'append))
 
-  (when (modulep! +tree-sitter)
-    (add-hook 'ruby-mode-local-vars-hook #'tree-sitter! 'append))
-
   (after! inf-ruby
-    (add-hook 'inf-ruby-mode-hook #'doom-mark-buffer-as-real-h)
     ;; switch to inf-ruby from compile if we detect a breakpoint has been hit
     (add-hook 'compilation-filter-hook #'inf-ruby-auto-enter))
 
@@ -39,56 +35,22 @@
         "{" #'ruby-toggle-block))
 
 
-(use-package! robe
+(use-package! ruby-ts-mode  ; 29.1+ only
+  :when (modulep! +tree-sitter)
   :defer t
   :init
-  (add-hook! 'ruby-mode-hook
-    (defun +ruby-init-robe-mode-maybe-h ()
-      "Start `robe-mode' if `lsp-mode' isn't active."
-      (or (bound-and-true-p lsp-mode)
-          (bound-and-true-p lsp--buffer-deferred)
-          (robe-mode +1))))
+  (set-tree-sitter! 'ruby-mode 'ruby-ts-mode
+    '((ruby :url "https://github.com/tree-sitter/tree-sitter-ruby"
+            :commit "71bd32fb7607035768799732addba884a37a6210")))
   :config
-  (set-repl-handler! 'ruby-mode #'+ruby-robe-repl-handler)
-  (set-company-backend! 'ruby-mode 'company-robe 'company-dabbrev-code)
-  (set-lookup-handlers! 'ruby-mode
-    :definition #'robe-jump
-    :documentation #'robe-doc)
-  (when (boundp 'read-process-output-max)
-    ;; Robe can over saturate IPC, making interacting with it slow/clobbering
-    ;; the GC, so increase the amount of data Emacs reads from it at a time.
-    (setq-hook! '(robe-mode-hook inf-ruby-mode-hook)
-      read-process-output-max (* 1024 1024)))
-  (when (modulep! :editor evil)
-    (add-hook 'robe-mode-hook #'evil-normalize-keymaps))
-  (map! :localleader
-        :map robe-mode-map
-        "'"  #'robe-start
-        "h"  #'robe-doc
-        "R"  #'robe-rails-refresh
-        :prefix "s"
-        "d"  #'ruby-send-definition
-        "D"  #'ruby-send-definition-and-go
-        "r"  #'ruby-send-region
-        "R"  #'ruby-send-region-and-go
-        "i"  #'ruby-switch-to-inf))
+  (set-electric! 'ruby-ts-mode :words '("else" "end" "elsif"))
+  (set-repl-handler! 'ruby-ts-mode #'inf-ruby)
+  (when (modulep! +lsp)
+    (add-hook 'ruby-ts-mode-local-vars-hook #'lsp! 'append)))
 
 
-;; NOTE Must be loaded before `robe-mode'
 (use-package! yard-mode
   :hook ruby-mode)
-
-
-(use-package! rubocop
-  :hook (ruby-mode . rubocop-mode)
-  :config
-  (set-popup-rule! "^\\*RuboCop" :select t)
-  (map! :localleader
-        :map rubocop-mode-map
-        "f" #'rubocop-check-current-file
-        "F" #'rubocop-autocorrect-current-file
-        "p" #'rubocop-check-project
-        "P" #'rubocop-autocorrect-project))
 
 
 (use-package! ruby-json-to-hash
@@ -107,7 +69,7 @@
 (use-package! rake
   :defer t
   :init
-  (setq rake-cache-file (concat doom-cache-dir "rake.cache"))
+  (setq rake-cache-file (file-name-concat doom-profile-cache-dir "rake.cache"))
   (setq rake-completion-system 'default)
   (map! :after ruby-mode
         :localleader

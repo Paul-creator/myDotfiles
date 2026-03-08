@@ -1,7 +1,5 @@
 ;;; email/notmuch/config.el -*- lexical-binding: t; -*-
 
-;; FIXME This module is a WIP!
-
 (defvar +notmuch-home-function #'notmuch
   "Function for customizing the landing page for doom-emacs =notmuch.")
 
@@ -45,6 +43,7 @@ variable accordingly.")
   (set-company-backend! 'notmuch-message-mode
     'notmuch-company '(company-ispell company-yasnippet))
 
+  (set-popup-rule! "^\\*notmuch" :ignore t)
   (set-popup-rule! "^\\*notmuch-hello" :side 'left :size 30 :ttl 0)
   (set-popup-rule! "^\\*subject:" :size 0.6 :ttl 0)
 

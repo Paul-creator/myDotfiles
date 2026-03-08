@@ -1,29 +1,28 @@
 ;; -*- no-byte-compile: t; -*-
 ;;; completion/vertico/packages.el
 
-(package! vertico :pin "c682ef50e62237435e9fc287927ce4181b49be90")
+(package! vertico :pin "93f15873d7d6244d72202c5dd7724a030a2d5b9a")
 
-(package! orderless :pin "49d1fdfb80b55699a00b11bc916ad29c0447039b")
+(package! orderless :pin "3a2a32181f7a5bd7b633e40d89de771a5dd88cc7")
 
-(package! consult :pin "0c3f53916ea0db0c472c0a0c620a85cc1b00caf2")
-(package! consult-dir :pin "15891383f34d43acc5bb82bda92239b1f54cf178")
-(when (and (modulep! :checkers syntax)
-           (not (modulep! :checkers syntax +flymake)))
-  (package! consult-flycheck :pin "3b999ae983900c16c0b5b5c30b7eca640d386a76"))
-(package! embark :pin "19a13e344e04bbf861eaa74491b23da52b398672")
-(package! embark-consult :pin "19a13e344e04bbf861eaa74491b23da52b398672")
+(package! consult :pin "d1d39d52151a10f7ca29aa291886e99534cc94db")
+(package! consult-dir :pin "1497b46d6f48da2d884296a1297e5ace1e050eb5")
+(when (modulep! :checkers syntax -flymake)
+  (package! consult-flycheck :pin "9fe96c4b75c8566170ad41a04c3849d2e2606104"))
+(package! embark :pin "e0238889b1c946514fd967d21d70599af9c4e887")
+(package! embark-consult :pin "e0238889b1c946514fd967d21d70599af9c4e887")
 
-(package! marginalia :pin "50a51c69f006ec8b3ba1c570555d279d4cff6d99")
+(package! marginalia :pin "142e4da1bd76dc5bdbbfd15532571b8a271e680e")
 
-(package! wgrep :pin "208b9d01cfffa71037527e3a324684b3ce45ddc4")
+(package! wgrep :pin "49f09ab9b706d2312cab1199e1eeb1bcd3f27f6f")
 
 (when (modulep! +icons)
-  (package! nerd-icons-completion :pin "426a1d7c29a04ae8e6ae9b55b0559f11a1e8b420"))
+  (package! nerd-icons-completion :pin "d09ea987ed3d2cc64137234f27851594050e2b64"))
 
 (when (modulep! +childframe)
   (package! vertico-posframe
     :recipe (:host github :repo "tumashu/vertico-posframe")
-    :pin "2e0e09e5bbd6ec576ddbe566ab122575ef051fab"))
+    :pin "d6e06a4f1b34d24cc0ca6ec69d2d6c965191b23e"))
 
 (when (modulep! :editor snippets)
-  (package! consult-yasnippet :pin "834d39acfe8a7d2c304afbe4d649b9372118c756"))
+  (package! consult-yasnippet :pin "a3482dfbdcbe487ba5ff934a1bb6047066ff2194"))

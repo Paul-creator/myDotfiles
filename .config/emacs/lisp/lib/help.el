@@ -102,6 +102,25 @@ selection of all minor-modes, active or not."
     (funcall (or (command-remapping fn) fn)
              symbol)))
 
+;;;###autoload
+(defun doom/describe-char (event)
+  "Like `describe-char', but will operate at mouse point if given prefix arg."
+  (interactive
+   (list (if current-prefix-arg
+             (save-window-excursion
+               (message "Click what to describe...")
+               (or (when-let ((evt (read--potential-mouse-event)))
+                     ;; Discard mouse release event
+                     (read--potential-mouse-event)
+                     (cadr evt))
+                   (user-error "Aborted")))
+           (point))))
+  (if (integerp event)
+      (describe-char event)
+    (when event
+      (with-selected-window (posn-window event)
+        (describe-char (posn-point event))))))
+
 
 ;;
 ;;; Documentation commands
@@ -157,7 +176,7 @@ selection of all minor-modes, active or not."
          (append (apply #'doom--org-headings files plist)
                  extra-candidates))
         ivy-sort-functions-alist)
-    (if-let (result (completing-read prompt alist nil nil initial-input))
+    (if-let* ((result (completing-read prompt alist nil nil initial-input)))
         (cl-destructuring-bind (file &optional location)
             (cdr (assoc result alist))
           (if action
@@ -310,7 +329,7 @@ without needing to check if they are available."
           (autodef
            (completing-read
             "Describe setter: "
-            ;; TODO Could be cleaner (refactor me!)
+            ;; REVIEW: Could be cleaner (refactor me!)
             (cl-loop with maxwidth = (apply #'max (mapcar #'length (mapcar #'symbol-name settings)))
                      for def in (sort settings #'string-lessp)
                      if (get def 'doom-module)
@@ -344,10 +363,10 @@ without needing to check if they are available."
 
 (defun doom--help-modules-list ()
   (cl-loop for (cat . mod) in (doom-module-list 'all)
-           for readme-path = (or (doom-module-locate-path cat mod "README.org")
-                                 (doom-module-locate-path cat mod))
+           for readme-path = (or (doom-module-locate-path (cons cat mod) "README.org")
+                                 (doom-module-locate-path (cons cat mod)))
            for format = (if mod (format "%s %s" cat mod) (format "%s" cat))
-           if (doom-module-p cat mod)
+           if (doom-module-active-p cat mod)
            collect (list format readme-path)
            else if (and cat mod)
            collect (list (propertize format 'face 'font-lock-comment-face)
@@ -360,12 +379,12 @@ without needing to check if they are available."
              (unless (eq (char-after) ?\()
                (backward-char))
              (let ((sexp (sexp-at-point)))
-               ;; DEPRECATED `featurep!'
+               ;; DEPRECATED: `featurep!' is deprecated
                (when (memq (car-safe sexp) '(featurep! modulep! require!))
                  (format "%s %s" (nth 1 sexp) (nth 2 sexp)))))))
         ((when buffer-file-name
            (when-let (mod (doom-module-from-path buffer-file-name))
-             (unless (memq (car mod) '(:core :user))
+             (unless (memq (car mod) '(:doom :user))
                (format "%s %s" (car mod) (cdr mod))))))
         ((when-let (mod (cdr (assq major-mode doom--help-major-mode-module-alist)))
            (format "%s %s"
@@ -532,8 +551,7 @@ If prefix arg is present, refresh the cache."
                                           (format "total %d" (length packages))))
                           packages nil t nil nil
                           (when guess (symbol-name guess))))))))
-  ;; TODO Refactor me.
-  (require 'doom-packages)
+  ;; REVIEW: Refactor me.
   (doom-initialize-packages)
   (help-setup-xref (list #'doom/help-packages package)
                    (called-interactively-p 'interactive))
@@ -558,7 +576,7 @@ If prefix arg is present, refresh the cache."
           (`straight
            (insert "Straight\n")
            (package--print-help-section "Pinned")
-           (insert (if-let (pin (plist-get (cdr (assq package doom-packages)) :pin))
+           (insert (if-let* ((pin (plist-get (cdr (assq package doom-packages)) :pin)))
                        pin
                      "unpinned")
                    "\n")
@@ -627,11 +645,10 @@ If prefix arg is present, refresh the cache."
           (insert "Declared by the following Doom modules:\n")
           (dolist (m modules)
             (let* ((module-path (pcase (car m)
-                                  (:core doom-core-dir)
+                                  (:doom doom-core-dir)
                                   (:user doom-user-dir)
                                   (category
-                                   (doom-module-locate-path category
-                                                            (cdr m)))))
+                                   (doom-module-locate-path (cons category (cdr m))))))
                    (readme-path (expand-file-name "README.org" module-path)))
               (insert indent)
               (doom--help-insert-button
@@ -644,7 +661,7 @@ If prefix arg is present, refresh the cache."
               (insert ")\n"))))
 
         (package--print-help-section "Configs")
-        (if-let ((configs (doom--help-package-configs package)))
+        (if-let* ((configs (doom--help-package-configs package)))
             (progn
               (insert "This package is configured in the following locations:")
               (dolist (location configs)
@@ -712,7 +729,6 @@ config blocks in your private config."
 
 (defvar counsel-rg-base-command)
 (defun doom--help-search (dirs query prompt)
-  ;; REVIEW Replace with deadgrep
   (unless doom-ripgrep-executable
     (user-error "Can't find ripgrep on your system"))
   (cond ((fboundp 'consult--grep)
@@ -724,7 +740,7 @@ config blocks in your private config."
                             (concat "%s " (mapconcat #'shell-quote-argument dirs " ")))
                   (append counsel-rg-base-command dirs))))
            (counsel-rg query nil "-Lz" (concat prompt ": "))))
-        ;; () TODO Helm support?
+        ;; TODO: Helm support?
         ((grep-find
           (string-join
            (append (list doom-ripgrep-executable

@@ -21,7 +21,7 @@
     (setq mu4e-maildir "~/.mail"
           mu4e-user-mail-address-list nil))
   :config
-  (add-to-list 'doom-debug-variables 'mu4e-debug)
+  (set-debug-variable! 'mu4e-debug)
   ;; mu4e now uses `display-buffer-alist' so we need to add some rules of our own
   (set-popup-rule! "^\\*mu4e-\\(main\\|headers\\)\\*" :ignore t)
   (set-popup-rule! "^\\*mu4e-log\\*" :select nil)
@@ -115,9 +115,9 @@ is non-nil."
               (t #'ido-completing-read))
         mu4e-attachment-dir
         (concat
-         (if-let ((xdg-download-query (and (executable-find "xdg-user-dir")
-                                           (doom-call-process "xdg-user-dir" "DOWNLOAD")))
-                  (xdg-download-dir (and (= 0 (car xdg-download-query)) (cdr xdg-download-query))))
+         (if-let* ((xdg-download-query (and (executable-find "xdg-user-dir")
+                                            (doom-call-process "xdg-user-dir" "DOWNLOAD")))
+                   (xdg-download-dir (and (= 0 (car xdg-download-query)) (cdr xdg-download-query))))
              xdg-download-dir
            (expand-file-name (or (getenv "XDG_DOWNLOAD_DIR")
                                  "Downloads")
@@ -180,7 +180,7 @@ is non-nil."
   (add-to-list 'mu4e-bookmarks
                '("flag:flagged" "Flagged messages" ?f) t)
 
-  ;; TODO avoid assuming that nerd-icons is present
+  ;; TODO: avoid assuming that nerd-icons is present
   (defvar +mu4e-header-colorized-faces
     '(nerd-icons-green
       nerd-icons-lblue
@@ -189,9 +189,6 @@ is non-nil."
       nerd-icons-purple
       nerd-icons-yellow)
     "Faces to use when coloring folders and account stripes.")
-
-  (defvar +mu4e-min-header-frame-width 120
-    "Minimum reasonable with for the header view.")
 
   ;; Add a column to display what email account the email belongs to,
   ;; and an account color stripe column
@@ -263,19 +260,13 @@ is non-nil."
             (insert (read-string "Subject (optional): "))
             (message "Sending..."))))))
 
-  ;; The header view needs a certain amount of horizontal space to actually show
-  ;; you all the information you want to see so if the header view is entered
-  ;; from a narrow frame, it's probably worth trying to expand it
-  (defvar +mu4e-min-header-frame-width 120
-    "Minimum reasonable with for the header view.")
+  ;; Fix columns misalignment in Headers buffers
   (add-hook! 'mu4e-headers-mode-hook
-    (defun +mu4e-widen-frame-maybe ()
-      "Expand the mu4e-headers containing frame's width to `+mu4e-min-header-frame-width'."
-      (dolist (frame (frame-list))
-        (when (and (string= (buffer-name (window-buffer (frame-selected-window frame)))
-                            mu4e-headers-buffer-name)
-                   (< (frame-width) +mu4e-min-header-frame-width))
-          (set-frame-width frame +mu4e-min-header-frame-width)))))
+    (defun +mu4e-headers-fix-alignment-h ()
+      "Header line face inherits from the default face"
+      (header-line-indent-mode 1)
+      (push (propertize " " 'display '(space :align-to header-line-indent-width)) header-line-format)
+      (face-remap-add-relative 'header-line '(:inherit (mu4e-header-face default)))))
 
   (when (fboundp 'imagemagick-register-types)
     (imagemagick-register-types))
@@ -291,12 +282,12 @@ is non-nil."
     (defun +mu4e-view-select-attachment ()
       "Use completing-read to select a single attachment.
 Acts like a singular `mu4e-view-save-attachments', without the saving."
-      (if-let ((parts (delq nil (mapcar
-                                 (lambda (part)
-                                   (when (assoc "attachment" (cdr part))
-                                     part))
-                                 (mu4e--view-gather-mime-parts))))
-               (files (+mu4e-part-selectors parts)))
+      (if-let* ((parts (delq nil (mapcar
+                                  (lambda (part)
+                                    (when (assoc "attachment" (cdr part))
+                                      part))
+                                  (mu4e--view-gather-mime-parts))))
+                (files (+mu4e-part-selectors parts)))
           (cdr (assoc (completing-read "Select attachment: " (mapcar #'car files)) files))
         (user-error (mu4e-format "No attached files found"))))
 
@@ -607,7 +598,7 @@ See `+mu4e-msg-gmail-p' and `mu4e-sent-messages-behavior'.")
 
     ;; don't save message to Sent Messages, Gmail/IMAP takes care of this
     (setq mu4e-sent-messages-behavior
-          (lambda () ;; TODO make use +mu4e-msg-gmail-p
+          (lambda () ;; TODO: make use +mu4e-msg-gmail-p
             (if (or (string-match-p "@gmail.com\\'" (message-sendmail-envelope-from))
                     (member (message-sendmail-envelope-from)
                             (mapcar #'car +mu4e-gmail-accounts)))
@@ -630,7 +621,6 @@ See `+mu4e-msg-gmail-p' and `mu4e-sent-messages-behavior'.")
 
     (defvar +mu4e--last-invalid-gmail-action 0)
 
-    (delq! 'delete mu4e-marks #'assq)
     (setf (alist-get 'delete mu4e-marks)
           (list
            :char '("D" . "✘")

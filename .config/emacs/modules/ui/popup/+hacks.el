@@ -38,16 +38,12 @@ grows larger."
 ;; Don't try to resize popup windows
 (advice-add #'balance-windows :around #'+popup-save-a)
 
-(defun +popup/quit-window (&optional arg)
+(defun +popup/quit-window ()
   "The regular `quit-window' sometimes kills the popup buffer and switches to a
 buffer that shouldn't be in a popup. We prevent that by remapping `quit-window'
 to this commmand."
-  (interactive "P")
-  (let ((orig-buffer (current-buffer)))
-    (quit-window arg)
-    (when (and (eq orig-buffer (current-buffer))
-               (+popup-buffer-p))
-      (+popup/close nil 'force))))
+  (interactive)
+  (+popup/close nil 'force))
 (define-key +popup-buffer-mode-map [remap quit-window] #'+popup/quit-window)
 
 
@@ -358,7 +354,7 @@ Ugh, such an ugly hack."
             (letf! (defun display-buffer-in-side-window (buffer alist)
                      (+popup-display-buffer-stacked-side-window-fn
                       buffer (append '((vslot . -9999) (select . t)) alist)))
-              ;; HACK Fix #2219 where the which-key popup would get cut off.
+              ;; HACK: Fix #2219 where the which-key popup would get cut off.
               (setcar act-popup-dim (1+ (car act-popup-dim)))
               (which-key--show-buffer-side-window act-popup-dim))))))
 

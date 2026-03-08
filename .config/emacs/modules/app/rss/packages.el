@@ -1,9 +1,9 @@
 ;; -*- no-byte-compile: t; -*-
 ;;; app/rss/packages.el
 
-(package! elfeed :pin "5c05a1eab37bc113ecb158a4d57fe05352fa2c6a")
+(package! elfeed :pin "bbb3cac27b0412d80b327b5cfaab83683c96a2a1")
 (package! elfeed-goodies :pin "544ef42ead011d960a0ad1c1d34df5d222461a6b")
 (when (modulep! +org)
-  (package! elfeed-org :pin "d62d23e25c5e3be3d70b7fbe1eaeb6e43f93a061"))
+  (package! elfeed-org :pin "34c0b4d758942822e01a5dbe66b236e49a960583"))
 (when (modulep! +youtube)
-  (package! elfeed-tube :pin "0c3fbc21259e1fa794f3179a53b410ba610231f2"))
+  (package! elfeed-tube :pin "99e55ac428dc50bff271575cffddc5060f22087d"))

@@ -11,10 +11,6 @@
 ;;
 ;;; Compatibilty fixes
 
-;; Curse Lion and its sudden but inevitable fullscreen mode!
-;; This is meaningless to railwaycat's emacs-mac build though.
-(setq ns-use-native-fullscreen nil)
-
 ;; Visit files opened outside of Emacs in existing frame, not a new one
 (setq ns-pop-up-frames nil)
 
@@ -33,7 +29,8 @@
 
 ;; Integrate with Keychain
 (after! auth-source
-  (pushnew! auth-sources 'macos-keychain-internet 'macos-keychain-generic))
+  (add-to-list 'auth-sources 'macos-keychain-internet)
+  (add-to-list 'auth-sources 'macos-keychain-generic))
 
 ;; Delete files to trash on macOS, as an extra layer of precaution against
 ;; accidentally deleting wanted files.

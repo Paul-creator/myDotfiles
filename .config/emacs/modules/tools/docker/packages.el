@@ -1,8 +1,8 @@
 ;; -*- no-byte-compile: t; -*-
 ;;; tools/docker/packages.el
 
-(package! docker :pin "f3adbf49e1140d13c934f16e19754c42a97dc91f")
+(package! docker :pin "916686b86e83a3bd2281fbc5e6f98962aa747429")
 ;; tramp-container (included with Emacs 29+) replaces docker-tramp
 (when (< emacs-major-version 29)
   (package! docker-tramp :pin "19d0771db4e6b89e19c00af5806438e315779c15"))
-(package! dockerfile-mode :pin "39a012a27fcf6fb629c447d13b6974baf906714c")
+(package! dockerfile-mode :pin "97733ce074b1252c1270fd5e8a53d178b66668ed")

@@ -68,7 +68,7 @@ If popup is focused, kill it."
                       (safe-persp-name (get-current-persp))
                     "main"))))
         (dir default-directory))
-    (if-let (win (get-buffer-window buffer))
+    (if-let* ((win (get-buffer-window buffer)))
         (let (confirm-kill-processes)
           (set-process-query-on-exit-flag (get-buffer-process buffer) nil)
           (delete-window win)
@@ -101,5 +101,5 @@ If already in a shell buffer, clear it and cd into the current directory."
     buffer))
 
 
-;; TODO +shell/frame -- dedicate current frame to shell buffers
-;; TODO +shell/frame-quite -- revert frame to before +term/frame
+;; TODO: +shell/frame -- dedicate current frame to shell buffers
+;; TODO: +shell/frame-quite -- revert frame to before +term/frame

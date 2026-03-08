@@ -157,7 +157,7 @@
       (set-buffer-modified-p nil)
       (org-link-open (org-element-context)))))
 
-;; DEPRECATED Will be renamed once docs "framework" is generalized
+;; DEPRECATED: Will be renamed once docs "framework" is generalized
 (defvar doom-docs-link-alist
   '(("doom-tag"                . "https://github.com/hlissner/doom-emacs/releases/tag/%s")
     ("doom-contrib-core"       . "id:9ac0c15c-29e7-43f8-8926-5f0edb1098f0")
@@ -177,7 +177,7 @@
     ("doom-suggest-faq"        . "id:aa28b732-0512-49ed-a47b-f20586c0f051")
     ("github"                  . "https://github.com/%s")
 
-    ;; TODO Implement later, once docs are generalized
+    ;; TODO: Implement later, once docs are generalized
     ;; ("github-release"          . (lambda (link)
     ;;                                (format "%s/releases/tag/%s"
     ;;                                        doom-docs-this-repo
@@ -442,7 +442,7 @@ This primes `org-mode' for reading."
           org-id-extra-files
           (org-inhibit-startup t)
           org-mode-hook)
-      (if force
+      (if (or force (not (file-exists-p org-id-locations-file)))
           (org-id-update-id-locations
            (doom-files-in (list doom-docs-dir doom-modules-dir)
                           :match "/[^.].+\\.org$"))

@@ -166,7 +166,8 @@ Returns OUTPUT."
                  (if (listp level)
                      (memq doom-print-minimum-level level)
                    (>= (get level 'print-level)
-                       (get doom-print-minimum-level 'print-level)))))
+                       (or (get doom-print-minimum-level 'print-level)
+                           9999)))))
     (when format
       (setq output (doom-print--format "%s" output)))
     (princ output stream)
@@ -333,21 +334,22 @@ based on the print level of the message. For example:
 (defun doom-print--fill (message &optional column indent)
   "Ensure MSG is split into lines no longer than `fill-column'."
   (with-temp-buffer
-    (let* ((fill-column (or column fill-column))
-           (col 0)
-           (indent (or indent 0))
+    (let* ((indent (or indent 0))
+           (fill-column (or column fill-column))
            (fill-prefix (make-string indent ?\s)))
       (save-excursion
-        (insert (format "%s" (or message ""))))
-      ;; HACK This monkey patches `fill-region' to not count ANSI codes as
-      ;;   legitimate characters, when calculating per-line `fill-column'.
+        (insert (replace-regexp-in-string
+                 "\n" "\n\n" (format "%s" (or message "")))))
+      ;; HACK: Use `fill-region', but don't count ANSI codes as legitimate
+      ;;   characters when calculating per-line `fill-column'.
       (letf! (defun current-fill-column ()
                (let ((target (funcall current-fill-column)))
                  (save-excursion
-                   (goto-char (line-beginning-position))
+                   (goto-char (pos-bol))
                    (let ((n 0)
                          (c 0))
-                     (while (and (not (eolp)) (<= n target))
+                     (while (and (not (eolp))
+                                 (<= n target))
                        (save-match-data
                          (if (looking-at ansi-color-control-seq-regexp)
                              (let ((len (length (match-string 0))))
@@ -357,7 +359,8 @@ based on the print level of the message. For example:
                            (forward-char 1))))
                      (+ target c (length fill-prefix))))))
         (fill-region (point-min) (point-max) nil t))
-      (buffer-string))))
+      (replace-regexp-in-string
+       "\n\n" "\n" (buffer-string)))))
 
 ;;;###autoload
 (defun doom-print--paragraph (&rest lines)
@@ -407,7 +410,7 @@ based on the print level of the message. For example:
   ```"
   (if (not text) ""
     (let ((case-fold-search nil))
-      ;; TODO Syntax highlighting?
+      ;; TODO: Syntax highlighting?
       (replace-regexp-in-string
        " *```\n\\(.+?\\)\n *```" (doom-print--style 'blue "%s" "\\1")
        (replace-regexp-in-string

@@ -17,7 +17,7 @@
 :args LIST
   Arguments to be appended to `consult-ripgrep-args'."
   (declare (indent defun))
-  (unless (executable-find "rg")
+  (unless (executable-find "rg" t)
     (user-error "Couldn't find ripgrep in your PATH"))
   (require 'consult)
   (setq deactivate-mark t)
@@ -41,7 +41,7 @@
     ;; Change the split style if the initial query contains the separator.
     (when query
       (cl-destructuring-bind (&key type separator initial _function)
-          (consult--async-split-style)
+          (alist-get consult-async-split-style consult-async-split-styles-alist)
         (pcase type
           (`separator
            (replace-regexp-in-string (regexp-quote (char-to-string separator))
@@ -146,7 +146,7 @@ Supports exporting consult-grep to wgrep, file to wdeired, and consult-location 
      (unwind-protect
          (list
           (consult--read
-           ;; REVIEW Refactor me
+           ;; REVIEW: Refactor me
            (nreverse
             (delete-dups
              (delq
@@ -196,10 +196,14 @@ targets."
       (which-key--show-keymap
        (if (eq (plist-get (car targets) :type) 'embark-become)
            "Become"
-         (format "Act on %s '%s'%s"
+         (if (> (or (plist-get (car targets) :multi) 0) 1)
+             (format "Act on %s '%ss'"
+                 (plist-get (car targets) :multi)
+                 (plist-get (car targets) :type))
+             (format "Act on %s '%s'%s"
                  (plist-get (car targets) :type)
                  (embark--truncate-target (plist-get (car targets) :target))
-                 (if (cdr targets) "…" "")))
+                 (if (cdr targets) "…" ""))))
        (if prefix
            (pcase (lookup-key keymap prefix 'accept-default)
              ((and (pred keymapp) km) km)
@@ -213,7 +217,8 @@ targets."
   "Runs consult-fd if fd version > 8.6.0 exists, consult-find otherwise.
 See minad/consult#770."
   (interactive "P")
-  ;; TODO this condition was adapted from a similar one in lisp/doom-projects.el, to be replaced with a more robust check post v3
+  ;; REVIEW: This condition was adapted from a similar one in
+  ;;   lisp/doom-projects.el, to be replaced with a more robust check post v3
   (if (when-let*
           ((bin (if (ignore-errors (file-remote-p default-directory nil t))
                     (cl-find-if (doom-rpartial #'executable-find t)
@@ -223,7 +228,7 @@ See minad/consult#770."
                       (cadr (split-string (cdr (doom-call-process bin "--version"))
                                           " " t))))
            ((ignore-errors (version-to-list version))))
-        ;; TODO remove once fd 8.6.0 is widespread enough to be the minimum version for doom
+        ;; REVIEW: Remove once fd 8.6.0 is widespread enough.
         (version< "8.6.0" version))
       (consult-fd dir initial)
     (consult-find dir initial)))
@@ -259,5 +264,7 @@ See minad/consult#770."
 ;;;###autoload
 (defun +vertico-orderless-disambiguation-dispatch (pattern _index _total)
   "Ensure $ works with Consult commands, which add disambiguation suffixes."
-  (when (char-equal (aref pattern (1- (length pattern))) ?$)
-    `(orderless-regexp . ,(concat (substring pattern 0 -1) "[\x200000-\x300000]*$"))))
+  (let ((len (length pattern)))
+    (when (and (> len 0)
+               (char-equal (aref pattern (1- len)) ?$))
+      `(orderless-regexp . ,(concat (substring pattern 0 -1) "[\x200000-\x300000]*$")))))

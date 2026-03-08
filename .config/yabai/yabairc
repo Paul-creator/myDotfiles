@@ -9,7 +9,7 @@ yabai -m config top_paddng 0
 yabai -m config bottom_padding 0
 yabai -m config left_padding 0
 yabai -m config right_padding 0
-yabai -m config window_gap 1
+yabai -m config window_gap 2
 
 # center mouse on window with focus
 yabai -m config mouse_follows_focus on

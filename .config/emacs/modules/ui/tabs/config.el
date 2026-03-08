@@ -25,11 +25,9 @@
   :config
   (defun +tabs-buffer-list ()
     (seq-filter (lambda (b)
-                  (cond ((eq (current-buffer) b) b)
-                        ((doom-temp-buffer-p b) nil)
-                        ((doom-unreal-buffer-p b) nil)
-                        ((buffer-file-name b) b)
-                        ((buffer-live-p b) b)))
+                  (when (buffer-live-p b)
+                    (or (eq (current-buffer) b)
+                        (not (doom-temp-buffer-p b)))))
                 (if (bound-and-true-p persp-mode)
                     (persp-buffer-list)
                   (buffer-list))))
@@ -41,5 +39,5 @@
       (when (centaur-tabs-mode-on-p)
         (centaur-tabs-local-mode)))))
 
-;; TODO tab-bar-mode (emacs 27)
-;; TODO tab-line-mode (emacs 27)
+;; TODO: tab-bar-mode (emacs 27)
+;; TODO: tab-line-mode (emacs 27)

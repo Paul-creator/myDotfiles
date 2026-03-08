@@ -82,30 +82,6 @@ are great, but this file exists to add demos for Doom's API and beyond.
 (after! rustic ...)
 (after! python ...)
 #+end_src
-* appendq!
-:PROPERTIES:
-:added: 3.0.0-pre
-:END:
-#+begin_src emacs-lisp
-(let ((x '(a b c)))
-  (appendq! x '(c d e))
-  x)
-#+end_src
-
-#+RESULTS:
-: (a b c c d e)
-
-#+begin_src emacs-lisp
-(let ((x '(a b c))
-      (y '(c d e))
-      (z '(f g)))
-  (appendq! x y z '(h))
-  x)
-#+end_src
-
-#+RESULTS:
-: (a b c c d e f g h)
-
 * cmd!
 :PROPERTIES:
 :added: 3.0.0-pre
@@ -556,16 +532,16 @@ These are side-by-side comparisons, showing how to bind keys with and without
 (package! rainbow-delimiters :disable t)
 
 ;; To install a package from a github repo
-(package! so-long :host 'github :repo "hlissner/emacs-so-long")
+(package! so-long :recipe '(:host 'github :repo "hlissner/emacs-so-long"))
 
 ;; If a package is particularly big and comes with submodules you don't need,
 ;; you can tell the package manager not to clone the repo recursively:
-(package! ansible :nonrecursive t)
+(package! ansible :recipe '(:nonrecursive t))
 
 ;; To pin a package to a specific commit:
 (package! evil :pin "e7bc39de2f9")
 ;; ...or branch:
-(package! evil :branch "stable")
+(package! evil :recipe '(:branch "stable"))
 ;; To unpin a pinned package:
 (package! evil :pin nil)
 
@@ -573,30 +549,6 @@ These are side-by-side comparisons, showing how to bind keys with and without
 ;; refresh to delete packages used only on one system, use :ignore
 (package! evil :ignore (not (equal system-name "my-desktop")))
 #+end_src
-* prependq!
-:PROPERTIES:
-:added: 3.0.0-pre
-:END:
-#+begin_src emacs-lisp
-(let ((x '(a b c)))
-  (prependq! x '(c d e))
-  x)
-#+end_src
-
-#+RESULTS:
-: (c d e a b c)
-
-#+begin_src emacs-lisp
-(let ((x '(a b c))
-      (y '(c d e))
-      (z '(f g)))
-  (prependq! x y z '(h))
-  x)
-#+end_src
-
-#+RESULTS:
-: (c d e f g h a b c)
-
 * pushnew!
 :PROPERTIES:
 :added: 3.0.0-pre

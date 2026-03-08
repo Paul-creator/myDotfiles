@@ -3,21 +3,23 @@
 
 (package! cmake-mode
   :recipe (:host github :repo "emacsmirror/cmake-mode" :files (:defaults "*"))
-  :pin "b08b5d9045308362a623a4f576896d55ffecfd52")
-(package! cuda-mode :pin "c3dae31b3d1abedf4d0b98840127e2cac73d6ad8")
+  :pin "25340a7d12c2a4b7f514a3792f3e89af32c55dfa")
 (package! demangle-mode :pin "04f545adab066708d6151f13da65aaf519f8ac4e")
-(package! disaster :pin "b20f8e1ef96167a7beed5eb4fc6ef72488bd3662")
-(package! opencl-mode :pin "204d5d9e0f5cb2cbe810f2933230eb08fe2c7695")
+(package! disaster :pin "0299c129d4153e3a794358159737c3ff9d155654")
+(package! opencl-mode :pin "6464abf969d916aba83e393b5206b147ac416da3")
 
-(unless (modulep! +tree-sitter)
-  (package! modern-cpp-font-lock :pin "43c6b68ff58fccdf9deef11674a172e4eaa8455c"))
+(when (package! cuda-mode :pin "c3dae31b3d1abedf4d0b98840127e2cac73d6ad8")
+  (when (and (modulep! +tree-sitter) (treesit-available-p))
+    (package! cuda-ts-mode
+      :recipe (:host github :repo "Ergus/cuda-ts-mode")
+      :pin "807f15150deb3a3060bc36a0e135a27876d7e239")))
 
-(when (package! glsl-mode :pin "9b2e5f28e489a1f73c4aed734105618ac0dc0c43")
+(when (package! glsl-mode :pin "86e6bb6cf28d1053366039683a4498401bab9c47")
   (when (modulep! :completion company)
     (package! company-glsl
       :recipe (:host github :repo "Kaali/company-glsl")
       :pin "404cd0694ab34971f9c01eb22126cd2e7d3f9dc4")))
 
 (when (and (modulep! +lsp)
-           (not (modulep! :tools lsp +eglot)))
-  (package! ccls :pin "41399b0eba03f9b80769ced71501ba702db4cd62"))
+           (modulep! :tools lsp -eglot))
+  (package! ccls :pin "12b43b357e834d59191d30d1941bf6bffaee677a"))

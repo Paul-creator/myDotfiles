@@ -1,7 +1,7 @@
 ;;; config/default/+bindings.el -*- lexical-binding: t; -*-
 
 (when (modulep! :editor evil +everywhere)
-  ;; NOTE SPC u replaces C-u as the universal argument.
+  ;; NOTE: SPC u replaces C-u as the universal argument.
 
   ;; Minibuffer
   (map! :map (evil-ex-completion-map evil-ex-search-keymap)
@@ -56,7 +56,8 @@
                '(((bound-and-true-p company-mode)
                   #'company-indent-or-complete-common)))
            ,@(when (modulep! :completion corfu)
-               '(((bound-and-true-p corfu-mode)
+               '(((and (bound-and-true-p corfu-mode)
+                       corfu--candidates)
                   (if (derived-mode-p 'eshell-mode 'comint-mode)
                       #'completion-at-point
                     #'indent-for-tab-command)))))))
@@ -296,20 +297,7 @@
        :g "M-7"   #'+workspace/switch-to-6
        :g "M-8"   #'+workspace/switch-to-7
        :g "M-9"   #'+workspace/switch-to-8
-       :g "M-0"   #'+workspace/switch-to-final
-       (:when (featurep :system 'macos)
-        :g "s-t"   #'+workspace/new
-        :g "s-T"   #'+workspace/display
-        :n "s-1"   #'+workspace/switch-to-0
-        :n "s-2"   #'+workspace/switch-to-1
-        :n "s-3"   #'+workspace/switch-to-2
-        :n "s-4"   #'+workspace/switch-to-3
-        :n "s-5"   #'+workspace/switch-to-4
-        :n "s-6"   #'+workspace/switch-to-5
-        :n "s-7"   #'+workspace/switch-to-6
-        :n "s-8"   #'+workspace/switch-to-7
-        :n "s-9"   #'+workspace/switch-to-8
-        :n "s-0"   #'+workspace/switch-to-final)))
+       :g "M-0"   #'+workspace/switch-to-final))
 
 ;;; :editor
 (map! (:when (modulep! :editor format)
@@ -349,11 +337,11 @@
 (map! :leader
       :desc "Eval expression"       ";"    #'pp-eval-expression
       :desc "M-x"                   ":"    #'execute-extended-command
-      :desc "Pop up scratch buffer" "x"    #'doom/open-scratch-buffer
+      :desc "Toggle scratch buffer" "x"    #'doom/toggle-scratch-buffer
       :desc "Org Capture"           "X"    #'org-capture
       ;; C-u is used by evil
       :desc "Universal argument"    "u"    #'universal-argument
-      :desc "window"                "w"    evil-window-map
+      :desc "window"                "w"    #'evil-window-map
       :desc "help"                  "h"    help-map
 
       (:when (modulep! :ui popup)
@@ -440,7 +428,7 @@
 
       ;;; <leader> c --- code
       (:prefix-map ("c" . "code")
-       (:when (and (modulep! :tools lsp) (not (modulep! :tools lsp +eglot)))
+       (:when (modulep! :tools lsp -eglot)
         :desc "LSP Execute code action"              "a"   #'lsp-execute-code-action
         :desc "LSP Organize imports"                 "o"   #'lsp-organize-imports
         :desc "LSP"                                  "l"   #'+default/lsp-command-map
@@ -481,6 +469,34 @@
        :desc "Delete trailing newlines"              "W"   #'doom/delete-trailing-newlines
        :desc "List errors"                           "x"   #'+default/diagnostics)
 
+      ;;; <leader> d --- debugger
+      (:when (modulep! :tools debugger)
+        (:prefix-map ("d" . "debugger")
+         "d" #'dape
+         "p" #'dape-pause
+         "c" #'dape-continue
+         "n" #'dape-next
+         "s" #'dape-step-in
+         "o" #'dape-step-out
+         "r" #'dape-restart
+         "i" #'dape-info
+         "R" #'dape-repl
+         "m" #'dape-memory
+         "M" #'dape-disassemble
+         "l" #'dape-breakpoint-log
+         "e" #'dape-breakpoint-expression
+         "h" #'dape-breakpoint-hits
+         "b" #'dape-breakpoint-toggle
+         "B" #'dape-breakpoint-remove-all
+         "t" #'dape-select-thread
+         "S" #'dape-select-stack
+         ">" #'dape-stack-select-down
+         "<" #'dape-stack-select-up
+         "x" #'dape-evaluate-expression
+         "w" #'dape-watch-dwim
+         "D" #'dape-disconnect-quit
+         "q" #'dape-quit))
+
       ;;; <leader> f --- file
       (:prefix-map ("f" . "file")
        :desc "Open project editorconfig"   "c"   #'editorconfig-find-current-editorconfig
@@ -498,7 +514,7 @@
        :desc "Browse private config"       "P"   #'doom/open-private-config
        :desc "Recent files"                "r"   #'recentf-open-files
        :desc "Rename/move file"            "R"   #'doom/move-this-file
-       :desc "Save file"                   "s"   #'save-buffer
+       :desc "Save file"                   "s"   #'basic-save-buffer
        :desc "Save file as..."             "S"   #'write-file
        :desc "Sudo find file"              "u"   #'doom/sudo-find-file
        :desc "Sudo this file"              "U"   #'doom/sudo-this-file
@@ -528,8 +544,8 @@
         :desc "Magit clone"               "C"   #'magit-clone
         :desc "Magit fetch"               "F"   #'magit-fetch
         :desc "Magit buffer log"          "L"   #'magit-log-buffer-file
-        :desc "Git stage this file"       "S"   #'magit-stage-buffer-file
-        :desc "Git unstage this file"     "U"   #'magit-unstage-buffer-file
+        :desc "Git stage this file"       "S"   #'magit-file-stage
+        :desc "Git unstage this file"     "U"   #'magit-file-unstage
         (:prefix ("f" . "find")
          :desc "Find file"                 "f"   #'magit-find-file
          :desc "Find gitconfig file"       "g"   #'magit-find-git-config-file
@@ -577,10 +593,6 @@
        :desc "From clipboard"                "y"   #'+default/yank-pop)
 
       ;;; <leader> l --- live share/collab
-      ;;; TODO Do you like this location for this map? This was the best idea we
-      ;;; could come up with, but we're happy to move it if there's a better
-      ;;; place! Also not sure if we're allowed to say "live share" since that's
-      ;;; a blatant ripoff of VS Code's name for this feature
       (:when (modulep! :tools collab)
        (:prefix-map ("l" . "live share/collab")
         :desc "Switch to a shared buffer"      "b"   #'crdt-switch-to-buffer
@@ -631,22 +643,8 @@
        :desc "Org export to clipboard"        "y" #'+org/export-to-clipboard
        :desc "Org export to clipboard as RTF" "Y" #'+org/export-to-clipboard-as-rich-text
 
-       (:when (modulep! :lang org +roam)
-        (:prefix ("r" . "roam")
-         :desc "Switch to buffer"              "b" #'org-roam-switch-to-buffer
-         :desc "Org Roam Capture"              "c" #'org-roam-capture
-         :desc "Find file"                     "f" #'org-roam-find-file
-         :desc "Show graph"                    "g" #'org-roam-graph
-         :desc "Insert"                        "i" #'org-roam-insert
-         :desc "Insert (skipping org-capture)" "I" #'org-roam-insert-immediate
-         :desc "Org Roam"                      "r" #'org-roam
-         (:prefix ("d" . "by date")
-          :desc "Arbitrary date" "d" #'org-roam-dailies-find-date
-          :desc "Today"          "t" #'org-roam-dailies-find-today
-          :desc "Tomorrow"       "m" #'org-roam-dailies-find-tomorrow
-          :desc "Yesterday"      "y" #'org-roam-dailies-find-yesterday)))
-
-       (:when (modulep! :lang org +roam2)
+       (:when (or (modulep! :lang org +roam)
+                  (modulep! :lang org +roam2))
         (:prefix ("r" . "roam")
          :desc "Open random node"           "a" #'org-roam-node-random
          :desc "Find node"                  "f" #'org-roam-node-find
@@ -686,7 +684,7 @@
         :desc "Tags search"    "m"  #'org-tags-view
         :desc "View search"    "v"  #'org-search-view)
        :desc "Default browser"    "b"  #'browse-url-of-file
-       :desc "Start debugger"     "d"  #'+debugger/start
+       :desc "Start a debugger"   "d"  #'+debugger/start
        :desc "New frame"          "f"  #'make-frame
        :desc "Select frame"       "F"  #'select-frame-by-name
        :desc "REPL"               "r"  #'+eval/open-repl-other-window
@@ -717,14 +715,27 @@
        (:when (modulep! :os macos)
         :desc "Reveal in Finder"           "o" #'+macos/reveal-in-finder
         :desc "Reveal project in Finder"   "O" #'+macos/reveal-project-in-finder
-        :desc "Send to Transmit"           "u" #'+macos/send-to-transmit
-        :desc "Send project to Transmit"   "U" #'+macos/send-project-to-transmit
-        :desc "Send to Launchbar"          "l" #'+macos/send-to-launchbar
-        :desc "Send project to Launchbar"  "L" #'+macos/send-project-to-launchbar
-        :desc "Open in iTerm"              "i" #'+macos/open-in-iterm
-        :desc "Open in new iTerm window"   "I" #'+macos/open-in-iterm-new-window)
+        (:prefix ("s" . "send to application")
+         :desc "Send to Transmit"           "t" #'+macos/send-to-transmit
+         :desc "Send project to Transmit"   "T" #'+macos/send-project-to-transmit
+         :desc "Send to Launchbar"          "l" #'+macos/send-to-launchbar
+         :desc "Send project to Launchbar"  "L" #'+macos/send-project-to-launchbar
+         :desc "Open in iTerm"              "i" #'+macos/open-in-iterm
+         :desc "Open in new iTerm window"   "I" #'+macos/open-in-iterm-new-window))
        (:when (modulep! :tools docker)
         :desc "Docker" "D" #'docker)
+       (:when (modulep! :tools llm)
+        (:prefix ("l" . "llm")
+         :desc "Add text to context"        "a" #'gptel-add
+         :desc "Explain"                    "e" #'gptel-quick
+         :desc "Add file to context"        "f" #'gptel-add-file
+         :desc "Open gptel"                 "l" #'gptel
+         :desc "Open gptel in same window"  "L" #'+llm/open-in-same-window
+         :desc "Send to gptel"              "s" #'gptel-send
+         :desc "Open gptel menu"            "m" #'gptel-menu
+         :desc "Rewrite"                    "r" #'gptel-rewrite
+         :desc "Org: set topic"             "o" #'gptel-org-set-topic
+         :desc "Org: set properties"        "O" #'gptel-org-set-properties))
        (:when (modulep! :email mu4e)
         :desc "mu4e" "m" #'=mu4e)
        (:when (modulep! :email notmuch)
@@ -756,12 +767,8 @@
        :desc "Run project"                  "R" #'projectile-run-project
        :desc "Save project files"           "s" #'projectile-save-project-buffers
        :desc "Test project"                 "T" #'projectile-test-project
-       :desc "Pop up scratch buffer"        "x" #'doom/open-project-scratch-buffer
-       :desc "Switch to scratch buffer"     "X" #'doom/switch-to-project-scratch-buffer
-       (:when (and (modulep! :tools taskrunner)
-                   (or (modulep! :completion ivy)
-                       (modulep! :completion helm)))
-        :desc "List project tasks"          "z" #'+taskrunner/project-tasks))
+       :desc "Toggle scratch buffer"        "x" #'doom/toggle-project-scratch-buffer
+       :desc "Switch to scratch buffer"     "X" #'doom/switch-to-project-scratch-buffer)
 
       ;;; <leader> q --- quit/session
       (:prefix-map ("q" . "quit/session")
@@ -775,8 +782,7 @@
        :desc "Restore last session"         "l" #'doom/quickload-session
        :desc "Save session to file"         "S" #'doom/save-session
        :desc "Restore session from file"    "L" #'doom/load-session
-       :desc "Restart & restore Emacs"      "r" #'doom/restart-and-restore
-       :desc "Restart Emacs"                "R" #'doom/restart)
+       :desc "Restart Emacs"                "r" #'doom/restart)
 
       ;;; <leader> r --- remote
       (:when (modulep! :tools upload)
@@ -842,8 +848,7 @@
        :desc "Fill Column Indicator"        "c" #'global-display-fill-column-indicator-mode
        :desc "Diff Highlights (Git Gutter)" "d" #'diff-hl-mode
        :desc "Flymake"                      "f" #'flymake-mode
-       (:when (and (modulep! :checkers syntax)
-                   (not (modulep! :checkers syntax +flymake)))
+       (:when (modulep! :checkers syntax -flymake)
         :desc "Flycheck"                   "f" #'flycheck-mode)
        :desc "Frame fullscreen"             "F" #'toggle-frame-fullscreen
        :desc "Evil goggles"                 "g" #'evil-goggles-mode
@@ -852,11 +857,11 @@
        :desc "Indent style"                 "I" #'doom/toggle-indent-style
        :desc "Line numbers"                 "l" #'doom/toggle-line-numbers
        (:when (modulep! :ui minimap)
-        :desc "Minimap"                      "m" #'minimap-mode)
+        :desc "Minimap"                      "m" #'demap-toggle)
        (:when (modulep! :lang org +present)
         :desc "org-tree-slide mode"        "p" #'org-tree-slide-mode)
        :desc "Read-only mode"               "r" #'read-only-mode
-       (:when (and (modulep! :checkers spell) (not (modulep! :checkers spell +flyspell)))
+       (:when (modulep! :checkers spell -flyspell)
         :desc "Spell checker"              "s" #'spell-fu-mode)
        (:when (modulep! :checkers spell +flyspell)
         :desc "Spell checker"              "s" #'flyspell-mode)

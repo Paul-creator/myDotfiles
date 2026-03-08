@@ -1,8 +1,8 @@
 ;; -*- no-byte-compile: t; -*-
 ;;; tools/pass/packages.el
 
-(package! pass :pin "ed7031c5c33a384d07da2d15c9d5f854027a26a2")
-(package! password-store :pin "b5e965a838bb68c1227caa2cdd874ba496f10149")
+(package! pass :pin "143456809fd2dbece9f241f4361085e1de0b0e75")
+(package! password-store :pin "3ca13cd8882cae4083c1c478858adbf2e82dd037")
 (package! password-store-otp :pin "be3a00a981921ed1b2f78012944dc25eb5a0beca")
 
 (when (modulep! :completion ivy)

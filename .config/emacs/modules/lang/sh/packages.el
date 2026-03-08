@@ -1,11 +1,14 @@
 ;; -*- no-byte-compile: t; -*-
 ;;; lang/sh/packages.el
 
-(when (modulep! :completion company)
-  (package! company-shell :pin "5f959a63a6e66eb0cbdac3168cad523a62cc2ccd"))
+(unless (modulep! +lsp)
+  (when (modulep! :completion company)
+    (package! company-shell :pin "5f959a63a6e66eb0cbdac3168cad523a62cc2ccd"))
+  (when (modulep! :completion corfu)
+    (package! bash-completion :pin "5b621db96efc549c64436011a81fd658c6dcf6a0")))
 
 (when (modulep! +fish)
   (package! fish-mode :pin "2526b1803b58cf145bc70ff6ce2adb3f6c246f89"))
 
 (when (modulep! +powershell)
-  (package! powershell :pin "38727f1cdaf0c937a62b68ee52ec7196b8149f93"))
+  (package! powershell :pin "ae60e11c96cc1767f05ce0cab6a917240ce2e37a"))

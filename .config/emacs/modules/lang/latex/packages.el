@@ -4,16 +4,16 @@
 (package! auctex
   :recipe (:files ("*.el" "*.info" "dir"
                    "doc" "etc" "images" "latex" "style"))
-  :pin "08881d08ce4161383b2e5666e5b388e13312188f")
+  :pin "f0c4b1dcc9e5987dce43b1e43f530351157ff577")
 (package! adaptive-wrap :pin "d75665b9c88e65f91dadd1e5880905bbdb7c09b7")
-(package! latex-preview-pane :pin "5297668a89996b50b2b62f99cba01cc544dbed2e")
+(package! auctex-cont-latexmk :pin "88c5f04d841c212d2b8331153e9e5c2767cb7197")
 (when (modulep! :editor evil +everywhere)
   (package! evil-tex :pin "2a3177c818f106e6c11032ac261f8691f5e11f74"))
 
 ;; Optional module features.
 
 (when (modulep! +cdlatex)
-  (package! cdlatex :pin "33770dec73138909714711b05a63e79da5a19ccd"))
+  (package! cdlatex :pin "fac070f0164ac9f5859cb4cccba7d29a65c337f3"))
 
 ;; Features according to other user selected options.
 

@@ -21,8 +21,8 @@ easier to scroll through.")
 (use-package! elfeed
   :commands elfeed
   :init
-  (setq elfeed-db-directory (concat doom-local-dir "elfeed/db/")
-        elfeed-enclosure-default-dir (concat doom-local-dir "elfeed/enclosures/"))
+  (setq elfeed-db-directory (file-name-concat doom-profile-data-dir "elfeed" "db/")
+        elfeed-enclosure-default-dir (file-name-concat doom-profile-data-dir "elfeed" "enclosures/"))
   :config
   (setq elfeed-search-filter "@2-week-ago "
         elfeed-show-entry-switch #'pop-to-buffer
@@ -97,9 +97,9 @@ easier to scroll through.")
   :config (elfeed-tube-setup)
   (map! (:map elfeed-show-mode-map
          [remap save-buffer] #'elfeed-tube-save
-         "F" #'elfeed-tube-fetch)
-        (:map elfeed-search-mode-map
-         [remap save-buffer] #'elfeed-tube-save
          "F" #'elfeed-tube-fetch
          "C-c C-f" #'elfeed-tube-mpv-follow-mode
-         "C-c C-w" #'elfeed-tube-mpv-where)))
+         "C-c C-w" #'elfeed-tube-mpv-where)
+        (:map elfeed-search-mode-map
+         [remap save-buffer] #'elfeed-tube-save
+         "F" #'elfeed-tube-fetch)))

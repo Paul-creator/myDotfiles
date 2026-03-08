@@ -54,54 +54,42 @@ in."
 
   (print! (start "Checking your Emacs version..."))
   (print-group!
-    (cond ((or (> emacs-major-version 29)
-               (string-match-p ".\\([56]0\\|9[0-9]\\)$" emacs-version))
-           (warn! "Detected a development version of Emacs (%s)" emacs-version)
-           (if (> emacs-major-version 29)
-               (explain! "This is the bleeding edge of Emacs. As it is constantly changing, Doom will not "
-                         "(officially) support it. If you've found a stable commit, great! But be cautious "
-                         "about updating Emacs too eagerly!\n")
-             (explain! "A version that ends in .50, .60, or .9X indicates a build of Emacs in between "
-                       "stable releases (i.e. development builds). Doom does not support these well.\n"))
-           (explain! "Because development builds are prone to random breakage, there will be a greater "
-                     "burden on you to investigate and deal with issues. Please make extra sure that "
-                     "your issue is reproducible on a stable version (between 27.1 and 29.4) before "
-                     "reporting them to Doom's issue tracker!\n"
-                     "\n"
-                     "If this doesn't phase you, read the \"Why does Doom not support Emacs HEAD\" QnA "
-                     "in Doom's FAQ. It offers some advice for debugging and surviving issues on the "
-                     "bleeding edge. Failing that, the latest stable release of Emacs will always be "
-                     "Doom's best supported version of Emacs."))
-          ((= emacs-major-version 27)
-           (warn! "Emacs 27 is supported, but not for long!")
-           (explain! "Doom will drop 27.x support sometime late-2024. It's recommended that you upgrade "
-                     "to the latest stable release (currently 29.4). It is better supported, faster, and "
-                     "more stable.")))
+    (when (or (> emacs-major-version 30)
+              (string-match-p ".\\([56]0\\|9[0-9]\\)$" emacs-version))
+      (warn! "Detected a development build of Emacs (%s)" emacs-version)
+      (if (> emacs-major-version 30)
+          (explain! "This is the bleeding edge of Emacs and is inherently unstable.\n")
+        (explain! "A version that ends in .50, .60, or .9X indicates a pre-release build of Emacs "
+                  "in between stable releases. Doom does not officially support them.\n"))
+      (explain! "If you encounter issues, make extra sure that your issue is reproducible on "
+                "a stable version of Emacs (between 27.1–30.2) before reporting them to Doom's "
+                "issue tracker! Check out the \"Why does Doom not support Emacs HEAD\" QnA "
+                "in Doom's FAQ for common issues and debugging."))
 
     (when (and (version= emacs-version "29.4") (featurep 'pgtk))
       (warn! "Detected emacs-pgtk 29.4!")
       (explain! "If you are experiencing segfaults (crashes), consider downgrading to 29.3 or "
-                "upgrading to 30+. A known bug in 29.4 causes intermittent crashes. "
+                "upgrading to 30.2+. A known bug in 29.4 causes intermittent crashes. "
                 "See doomemacs#7915 for details.")))
 
   (print! (start "Checking for Doom's prerequisites..."))
   (print-group!
-   (if (not (executable-find "git"))
-       (error! "Couldn't find git on your machine! Doom's package manager won't work.")
-     (save-match-data
-       (let* ((version
-               (cdr (doom-call-process "git" "version")))
-              (version
-               (and (string-match "git version \\([0-9]+\\(?:\\.[0-9]+\\)\\{2\\}\\)" version)
-                    (match-string 1 version))))
-         (if version
-             (when (version< version "2.23")
-               (error! "Git %s detected! Doom requires git 2.23 or newer!"
-                       version))
-           (warn! "Cannot determine Git version. Doom requires git 2.23 or newer!")))))
+    (if (not (executable-find "git"))
+        (error! "Couldn't find git on your machine! Doom's package manager won't work.")
+      (save-match-data
+        (let* ((version
+                (cdr (doom-call-process "git" "version")))
+               (version
+                (and (string-match "git version \\([0-9]+\\(?:\\.[0-9]+\\)\\{2\\}\\)" version)
+                     (match-string 1 version))))
+          (if version
+              (when (version< version "2.23")
+                (error! "Git %s detected! Doom requires git 2.23 or newer!"
+                        version))
+            (warn! "Cannot determine Git version. Doom requires git 2.23 or newer!")))))
 
-   (unless (executable-find "rg")
-     (error! "Couldn't find the `rg' binary; this a hard dependecy for Doom, file searches may not work at all")))
+    (unless (executable-find "rg")
+      (error! "Couldn't find the `rg' binary; this a hard dependecy for Doom, file searches may not work at all")))
 
   (print! (start "Checking for Emacs config conflicts..."))
   (print-group!
@@ -144,6 +132,23 @@ in."
                 "You must install a prebuilt Emacs binary with this included, or compile "
                 "Emacs with the --with-native-compilation option.")))
 
+  (print! (start "Checking for fonts..."))
+  (print-group!
+  (if (not (executable-find "fc-list"))
+      (warn! "Warning: unable to detect fonts because fontconfig isn't installed")
+    (with-temp-buffer
+      (cl-destructuring-bind (status . output)
+          (doom-call-process "fc-list" "" "family")
+        (if (not (zerop status))
+            (print! (error "There was an error running `fc-list'. Is fontconfig installed correctly?"))
+          (insert output)
+          (unless (re-search-backward "Symbola" nil t)
+            (print! (warn "Failed to locate the 'Symbola' font on your system"))
+            (explain! "Symbola is Emacs' fallback font. It is used when no other active font can "
+                      "render certain characters. This render failure can cause crash Emacs in "
+                      "cases and massive slowdowns in other. It would be wise to have this font "
+                      "installed.")))))))
+
   (print! (start "Checking for private config conflicts..."))
   (print-group!
     (let* ((xdg-dir (concat (or (getenv "XDG_CONFIG_HOME")
@@ -170,51 +175,44 @@ in."
 
   (print! (start "Checking for common environmental issues..."))
   (print-group!
-    (when (string-match-p "/fish$" shell-file-name)
-      (print! (warn "Detected Fish as your $SHELL"))
-      (explain! "Fish (and possibly other non-POSIX shells) is known to inject garbage "
-                "output into some of the child processes that Emacs spawns. Many Emacs "
-                "packages/utilities will choke on this output, causing unpredictable issues. "
-                "To get around this, either:\n\n"
-                "  - Add the following to $DOOMDIR/config.el:\n\n"
-                "    (setq shell-file-name (executable-find \"bash\"))\n\n"
-                "  - Or change your default shell to a POSIX shell (like bash or zsh) "
-                "    and explicitly configure your terminal apps to use the shell you "
-                "    want.\n\n"
-                "If you opt for option 1 and use one of Emacs' terminal emulators, you "
-                "will also need to configure them to use Fish, e.g.\n\n"
-                "  (setq-default vterm-shell (executable-find \"fish\"))\n\n"
-                "  (setq-default explicit-shell-file-name (executable-find \"fish\"))\n"))
+    (unless (file-writable-p temporary-file-directory)
+      (print! (error "Your temporary file directory is not writable!"))
+      (explain! "Emacs and Doom uses this directory to store temporary files. It is currently "
+                "set to:\n\n"
+                (format "  %s\n\n" temporary-file-directory)
+                "Set $TMPDIR to a writable directory to fix this. If it is not resolved, Doom "
+                "CLI commands and various Emacs components will unpredictably throw file "
+                "permissions errors at unpredictable times."))
 
-    (condition-case e
-        (when (featurep :system 'windows)
-          (let ((filea (expand-file-name "__testfile1" temporary-file-directory))
-                (fileb (expand-file-name "__testfile2" temporary-file-directory)))
-            (unwind-protect
-                (progn
-                  (with-temp-file fileb)
-                  (make-symbolic-link fileb filea)
-                  (not (file-symlink-p filea)))
-              (delete-file filea)
-              (delete-file fileb))))
-      ('file-error
-       (when (equal (cons (nth 1 e) (nth 2 e))
-                    (cons "Making symbolic link" "Operation not permitted"))
-         (print! (warn "Symlinks are not enabled on this operating system"))
-         (explain! "In the near future, Doom will make extensive use of symlinks to save space "
-                   "and simplify package and profile management. Without symlinks, much of it "
-                   "won't be functional. To get around this, you have three options:"
-                   "\n\n"
-                   "  - Enabling 'Developer Mode' in the Windows settings (search for 'Developer "
-                   "    Settings' in the start menu). This will warn you about its effect on system "
-                   "    security, but this can be ignored. If it bothers you, consider another option "
-                   "    below.\n"
-                   "  - Running your shell (cmd or powershell) in administrator mode anytime you "
-                   "    need to use the 'doom' script. Also, the `doom/reload' command won't work "
-                   "    unless Emacs itself is launched in administrator mode.\n"
-                   "  - Install Emacs in WSL 1/2; the native Linux environment it creates supports "
-                   "    symlinks out of the box and is the best option (as Emacs is generally more "
-                   "    stable, predictable, and faster there).\n\n")))))
+    (unless (string-match-p "/\\(ba\\|z\\|m?k\\|d?a\\)?sh$" shell-file-name)
+      (print! (warn "Detected a non-POSIX compliant shell (%s)" shell-file-name))
+      (explain! "Non-POSIX compliant shells (particularly Fish and Nushell) can cause "
+                "unpredictable issues with any Emacs utilities that spawn child processes "
+                "from shell commands (like diff-hl TRAMP, and terminal emulators). To get "
+                "around this, configure Emacs to use a POSIX shell internally, e.g.\n\n"
+                "  ;;; add to $DOOMDIR/config.el\n"
+                "  (setq shell-file-name (executable-find \"bash\"))\n\n"
+                "Emacs' terminal emulators can be safely configured to use your original $SHELL:\n\n"
+                "  ;;; add to $DOOMDIR/config.el\n"
+                (format "  (setq-default vterm-shell \"%s\")\n" shell-file-name)
+                (format "  (setq-default explicit-shell-file-name \"%s\")\n" shell-file-name)))
+
+    (unless (doom-system-supports-symlinks-p)
+      (print! (warn "Symlinks are not enabled on this operating system"))
+      (explain! "In the near future, Doom will make extensive use of symlinks to save space "
+                "and simplify package and profile management. Without symlinks, much of it "
+                "won't be functional. To get around this, you have three options:"
+                "\n\n"
+                "  - Enabling 'Developer Mode' in the Windows settings (search for 'Developer "
+                "    Settings' in the start menu). This will warn you about its effect on system "
+                "    security, but this can be ignored. If it bothers you, consider another option "
+                "    below.\n"
+                "  - Running your shell (cmd or powershell) in administrator mode anytime you "
+                "    need to use the 'doom' script. Also, the `doom/reload' command won't work "
+                "    unless Emacs itself is launched in administrator mode.\n"
+                "  - Install Emacs in WSL 1/2; the native Linux environment it creates supports "
+                "    symlinks out of the box and is the best option (as Emacs is generally more "
+                "    stable, predictable, and faster there).\n\n")))
 
   (print! (start "Checking for stale elc files..."))
   (elc-check-dir doom-core-dir)
@@ -237,7 +235,9 @@ in."
   (print! (start "Checking Doom Emacs..."))
   (condition-case-unless-debug ex
       (print-group!
-        (require 'doom-start)
+        (doom-initialize t)
+        (doom-startup)
+        (require 'straight)
 
         (print! (success "Initialized Doom Emacs %s") doom-version)
         (print!
@@ -261,15 +261,31 @@ in."
           (unless (ignore-errors (executable-find doom-fd-executable))
             (warn! "Couldn't find the `fd' binary; project file searches will be slightly slower"))
 
-          (require 'projectile)
-          (when (projectile-project-root "~")
+          (require 'projectile nil t)
+          (when (projectile-project-p "~")
             (warn! "Your $HOME is recognized as a project root")
-            (explain! "Emacs will assume $HOME is the root of any project living under $HOME. If this isn't\n"
-                      "desired, you will need to remove \".git\" from `projectile-project-root-files-bottom-up'\n"
-                      "(a variable), e.g.\n\n"
-                      "  (after! projectile\n"
-                      "    (setq projectile-project-root-files-bottom-up\n"
-                      "          (remove \".git\" projectile-project-root-files-bottom-up)))"))
+            (let ((files
+                   (let ((default-directory (expand-file-name "~")))
+                     (append (seq-filter #'file-exists-p projectile-project-root-files-bottom-up)
+                             (seq-filter #'file-exists-p projectile-project-root-files)))))
+              (explain! "The following files will interfere with projectile's project root detection "
+                        "for any project that lives under $HOME:\n\n"
+                        "  - " (mapconcat #'expand-file-name files "\n - ") "\n\n"
+                        "To fix this, these files must be deleted (recommended), or removed from the "
+                        "`projectile-project-root-files-bottom-up' or `projectile-project-root-files' "
+                        "variables in your Doom config (not recommended). For example:\n\n"
+                        "    ;; Add to $DOOMDIR/config.el\n"
+                        "    (after! projectile\n"
+                        "      (setq projectile-project-root-files-bottom-up\n"
+                        "            (remove \".git\" projectile-project-root-files-bottom-up)))\n")))
+
+          ;; REVIEW: When projectile is replaced with project...
+          ;; (require 'project)
+          ;; (when (project-current nil doom-emacs-dir)
+          ;;   (let ((file (or (seq-find #'file-exists-p project-vc-extra-root-markers)
+          ;;                   (seq-find #'file-directory-p (mapcar #'cdr project-vc-backend-markers-alist)))))
+          ;;     ;; ...
+          ;;     ))
 
           ;; There should only be one
           (when (and (file-equal-p doom-user-dir "~/.config/doom")
@@ -315,20 +331,19 @@ in."
 
         (when doom-modules
           (print! (start "Checking your enabled modules..."))
-          (advice-add #'require :around #'doom-shut-up-a)
           (pcase-dolist (`(,group . ,name) (doom-module-list))
-            (doom-context-with 'doctor
+            (with-doom-context 'doctor
               (let (doom-local-errors
                     doom-local-warnings)
                 (let (doom-doctor--errors
                       doom-doctor--warnings)
                   (condition-case-unless-debug ex
-                      (doom-module-context-with (cons group name)
-                        (let ((doctor-file   (doom-module-expand-path group name "doctor.el"))
-                              (packages-file (doom-module-expand-path group name doom-module-packages-file)))
+                      (with-doom-module (cons group name)
+                        (let ((doctor-file   (doom-module-expand-path (cons group name) "doctor.el"))
+                              (packages-file (doom-module-expand-path (cons group name) doom-module-packages-file)))
                           (when packages-file
                             (cl-loop with doom-output-indent = 6
-                                     for name in (doom-context-with 'packages
+                                     for name in (with-doom-context 'package
                                                    (let* (doom-packages
                                                           doom-disabled-packages)
                                                      (load packages-file 'noerror 'nomessage)
@@ -351,8 +366,8 @@ in."
                       (print! "%s" (string-join (append doom-doctor--errors doom-doctor--warnings) "\n")))
                     (setq doom-local-errors doom-doctor--errors
                           doom-local-warnings doom-doctor--warnings)))
-                (appendq! doom-doctor--errors doom-local-errors)
-                (appendq! doom-doctor--warnings doom-local-warnings))))))
+                (cl-callf append doom-doctor--errors doom-local-errors)
+                (cl-callf append doom-doctor--warnings doom-local-warnings))))))
     (error
      (warn! "Attempt to load DOOM failed\n  %s\n"
             (or (cdr-safe ex) (car ex)))

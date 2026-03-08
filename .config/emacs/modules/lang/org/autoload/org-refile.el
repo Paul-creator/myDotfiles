@@ -1,6 +1,6 @@
 ;;; lang/org/autoload/org-refile.el -*- lexical-binding: t; -*-
 
-;; REVIEW These are all proof-of-concept. Refactor me!
+;; REVIEW: These are all proof-of-concept. Refactor me!
 
 ;;;###autoload
 (defun +org/refile-to-current-file (arg &optional file)
@@ -8,7 +8,7 @@
 If prefix ARG, copy instead of move."
   (interactive "P")
   (let ((org-refile-targets `((,file :maxlevel . 10)))
-        (org-refile-use-outline-path t)
+        (org-refile-use-outline-path 'file)
         (org-refile-keep arg)
         current-prefix-arg)
     (call-interactively #'org-refile)))

@@ -111,7 +111,7 @@ isn't disabled in `+ligatures-extras-in-modes'."
     (when-let*
         (((+ligatures--enable-p +ligatures-extras-in-modes))
          (symbols
-          (if-let ((symbols (assq major-mode +ligatures-extra-alist)))
+          (if-let* ((symbols (assq major-mode +ligatures-extra-alist)))
               (cdr symbols)
             (cl-loop for (mode . symbols) in +ligatures-extra-alist
                      if (derived-mode-p mode)
@@ -149,7 +149,7 @@ isn't disabled in `+ligatures-extras-in-modes'."
  ;; leave the check here for safety.
  ((and (> emacs-major-version 27)
        (or (featurep 'ns)
-           (featurep 'harfbuzz))
+           (string-match-p "HARFBUZZ" system-configuration-features))
        (featurep 'composite))   ; Emacs loads `composite' at startup
 
   (after! ligature

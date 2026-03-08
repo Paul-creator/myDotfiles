@@ -270,7 +270,7 @@ line to beginning of line. Same as `evil-delete-back-to-indentation'."
     (funcall (if (fboundp 'evil-delete)
                  #'evil-delete
                #'delete-region)
-             (point-at-bol) (point))
+             (line-beginning-position) (point))
     (unless empty-line-p
       (indent-according-to-mode))))
 
@@ -359,7 +359,7 @@ Respects `require-final-newline'."
   "Change the indentation size to WIDTH of the current buffer.
 
 The effectiveness of this command is significantly improved if you have
-editorconfig or dtrt-indent installed."
+editorconfig installed."
   (interactive
    (list (if (integerp current-prefix-arg)
              current-prefix-arg
@@ -373,7 +373,8 @@ editorconfig or dtrt-indent installed."
            ;; A built-in `editorconfig' package was added in Emacs 30.x, but
            ;; with a different API. Since it's built in, prefer it over the
            ;; upstream one, but we still need to adapt:
-           (require 'editorconfig nil t))
+           (if (require 'editorconfig nil t)
+               (fboundp #'editorconfig--default-indent-size-function)))
          (pcase-dolist (`(,var . ,val) (editorconfig--default-indent-size-function width))
            (set (make-local-variable var) val)))
         ((require 'editorconfig nil t)
@@ -389,20 +390,6 @@ editorconfig or dtrt-indent installed."
 
 ;;
 ;;; Hooks
-
-;;;###autoload
-(defun doom-enable-delete-trailing-whitespace-h ()
-  "Enables the automatic deletion of trailing whitespaces upon file save.
-
-i.e. enables `ws-butler-mode' in the current buffer."
-  (ws-butler-mode +1))
-
-;;;###autoload
-(defun doom-disable-delete-trailing-whitespace-h ()
-  "Disables the automatic deletion of trailing whitespaces upon file save.
-
-i.e. disables `ws-butler-mode' in the current buffer."
-  (ws-butler-mode -1))
 
 ;;;###autoload
 (defun doom-enable-show-trailing-whitespace-h ()

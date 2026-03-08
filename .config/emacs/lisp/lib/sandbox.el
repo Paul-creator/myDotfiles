@@ -24,23 +24,31 @@
 
 (defun doom--sandbox-launch (args forms)
   (require 'package)
-  (require 'restart-emacs)
   (let* ((sandbox-file (expand-file-name "init.el" doom-sandbox-dir))
-         (args (append args (list "-l" sandbox-file))))
+         (args (append args (list "-l" sandbox-file)))
+         (bin (or (when-let* (((featurep :system 'windows))
+                              (bin (expand-file-name "runemacs.exe" invocation-directory))
+                              ((file-exists-p bin)))
+                    bin)
+                  (expand-file-name invocation-name invocation-directory))))
     (delete-directory doom-sandbox-dir 'recursive)
     (make-directory doom-sandbox-dir 'parents)
     (with-temp-file sandbox-file
       (prin1 forms (current-buffer)))
     (condition-case-unless-debug e
         (cond ((display-graphic-p)
-               (if (memq system-type '(windows-nt ms-dos))
-                   (restart-emacs--start-gui-on-windows args)
-                 (restart-emacs--start-gui-using-sh args)))
+               (if (featurep :system 'windows)
+                   (w32-shell-execute "open" bin (string-join args " "))
+                 (call-process "sh" nil
+                               0 nil
+                               "-c" (format "%s %s &"
+                                            (shell-quote-argument bin)
+                                            (mapconcat #'shell-quote-argument args " ")))))
               ((memq system-type '(windows-nt ms-dos))
                (user-error "Cannot start another Emacs from Windows shell."))
               ((suspend-emacs
                 (format "%s %s -nw; fg"
-                        (shell-quote-argument (restart-emacs--get-emacs-binary))
+                        (shell-quote-argument bin)
                         (mapconcat #'shell-quote-argument args " ")))))
       (error
        (delete-directory doom-sandbox-dir 'recursive)
@@ -49,9 +57,10 @@
 
 (defun doom--sandbox-run (&optional mode)
   "TODO"
-  (letenv! (("DOOMDIR" (if (eq mode 'vanilla-doom+)
-                           (expand-file-name "___does_not_exist___" temporary-file-directory)
-                         doom-user-dir)))
+  (with-environment-variables
+      (("DOOMDIR" (if (eq mode 'vanilla-doom+)
+                      (expand-file-name "___does_not_exist___" temporary-file-directory)
+                    doom-user-dir)))
     (doom--sandbox-launch
      (unless (memq mode '(doom vanilla-doom+)) '("-Q"))
      (let ((forms
@@ -86,9 +95,12 @@
                   package-archives ',package-archives)
             (with-eval-after-load 'doom
               (run-hooks 'doom-before-init-hook))
+            (with-eval-after-load 'treesit
+              (add-to-list 'treesit-extra-load-path
+                           ,(file-name-concat doom-profile-data-dir "tree-sitter")))
             (with-eval-after-load 'undo-tree
-              ;; HACK `undo-tree' sometimes throws errors because
-              ;;      `buffer-undo-tree' isn't correctly initialized.
+              ;; HACK: `undo-tree' sometimes throws errors because
+              ;;   `buffer-undo-tree' isn't correctly initialized.
               (setq-default buffer-undo-tree (make-undo-tree)))
             ;; Then launch as much about Emacs as we can
             (defun --run-- () ,forms)
@@ -103,7 +115,7 @@
                (`vanilla       ; nothing loaded
                 `(progn
                    (setq native-comp-deferred-compilation nil
-                         native-comp-deferred-compilation-deny-list ',(bound-and-true-p native-comp-async-env-modifier-form)
+                         native-comp-deferred-compilation-deny-list ',(bound-and-true-p native-comp-deferred-compilation-deny-list)
                          native-comp-async-env-modifier-form ',(bound-and-true-p native-comp-async-env-modifier-form)
                          native-comp-eln-load-path ',(bound-and-true-p native-comp-eln-load-path))
                    (package-initialize t)

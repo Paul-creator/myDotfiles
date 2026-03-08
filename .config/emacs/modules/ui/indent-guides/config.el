@@ -14,14 +14,22 @@ be enabled. If any function returns non-nil, the mode will not be activated."
 
 (use-package! indent-bars
   :unless noninteractive
-  :hook ((prog-mode text-mode conf-mode) . +indent-guides-init-maybe-h)
+  :hook (doom-first-buffer . +indent-guides-startup-h)
   :init
+  (defun +indent-guides-startup-h ()
+    "Set up indent-bars to activate after startup."
+    (add-hook 'after-change-major-mode-hook #'+indent-guides-init-maybe-h))
+
   (defun +indent-guides-init-maybe-h ()
     "Enable `indent-bars-mode' depending on `+indent-guides-inhibit-functions'."
-    (unless (run-hook-with-args-until-success '+indent-guides-inhibit-functions)
+    (unless (or (eq major-mode 'fundamental-mode)
+                (doom-temp-buffer-p (current-buffer))
+                (run-hook-with-args-until-success '+indent-guides-inhibit-functions))
       (indent-bars-mode +1)))
+
   :config
-  (setq indent-bars-prefer-character
+  (setq indent-bars-treesit-support (modulep! :tools tree-sitter)
+        indent-bars-prefer-character
         (or
          ;; Bitmaps are far slower on MacOS, inexplicably, but this needs more
          ;; testing to see if it's specific to ns or emacs-mac builds, or is
@@ -42,23 +50,22 @@ be enabled. If any function returns non-nil, the mode will not be activated."
         ;; unnecessary overhead for little benefit.
         indent-bars-highlight-current-depth nil)
 
-  ;; TODO: Uncomment once we support treesit
-  ;; (setq indent-bars-treesit-support (modulep! :tools tree-sitter))
-
   ;; indent-bars adds this to `enable-theme-functions', which was introduced in
   ;; 29.1, which will be redundant with `doom-load-theme-hook'.
   (unless (boundp 'enable-theme-functions)
     (add-hook 'doom-load-theme-hook #'indent-bars-reset-styles))
 
   (add-hook! '+indent-guides-inhibit-functions
+    ;; Buffers that may have special fontification or may be invisible to the
+    ;; user. Particularly src blocks, org agenda, or special modes like magit.
+    (defun +indent-guides-in-special-buffers-p ()
+      (and (not (derived-mode-p 'text-mode 'prog-mode 'conf-mode))
+           (or buffer-read-only
+               (bound-and-true-p cursor-intangible-mode)
+               (doom-special-buffer-p (current-buffer) t))))
     ;; Org's virtual indentation messes up indent-guides.
     (defun +indent-guides-in-org-indent-mode-p ()
       (bound-and-true-p org-indent-mode))
-    ;; Fix #6438: indent-guides prevent inline images from displaying in ein
-    ;; notebooks.
-    (defun +indent-guides-in-ein-notebook-p ()
-      (and (bound-and-true-p ein:notebook-mode)
-           (bound-and-true-p ein:output-area-inlined-images)))
     ;; Don't display indent guides in childframe popups (which are almost always
     ;; used for completion or eldoc popups).
     ;; REVIEW: Swap with `frame-parent' when 27 support is dropped
@@ -82,7 +89,7 @@ be enabled. If any function returns non-nil, the mode will not be activated."
         (goto-char nlp)
       (apply fn col args)))
 
-  ;; HACK: `indent-bars-mode' interactions with some packages poorly, often
+  ;; HACK: `indent-bars-mode' interacts with some packages poorly, often
   ;;   flooding whole sections of the buffer with indent guides. This section is
   ;;   dedicated to fixing interop with those packages.
   (when (modulep! :tools magit)
@@ -105,21 +112,4 @@ be enabled. If any function returns non-nil, the mode will not be activated."
     (defadvice! +indent-guides--restore-after-lsp-ui-peek-a (&rest _)
       :after #'lsp-ui-peek--peek-hide
       (unless indent-bars-prefer-character
-        (indent-bars-setup))))
-
-  ;; HACK: Both indent-bars and tree-sitter-hl-mode use the jit-font-lock
-  ;;   mechanism, and so they don't play well together. For those particular
-  ;;   cases, we'll use `highlight-indent-guides', at least until the
-  ;;   tree-sitter module adopts treesit.
-  (defvar-local +indent-guides-p nil)
-  (add-hook! 'tree-sitter-mode-hook :append
-    (defun +indent-guides--toggle-on-tree-sitter-h ()
-      (if tree-sitter-mode
-          (when (bound-and-true-p indent-bars-mode)
-            (with-memoization (get 'indent-bars-mode 'disabled-in-tree-sitter)
-              (doom-log "Disabled `indent-bars-mode' because it's not supported in `tree-sitter-mode'")
-              t)
-            (indent-bars-mode -1)
-            (setq +indent-guides-p t))
-        (when +indent-guides-p
-          (indent-bars-mode +1))))))
+        (indent-bars-setup)))))

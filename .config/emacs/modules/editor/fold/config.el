@@ -3,8 +3,7 @@
 (defcustom +fold-ellipsis " [...] "
   "The ellipsis to show for ellided regions (folds).
 
-`org-ellipsis', `truncate-string-ellipsis', and `ts-fold-replacement' are set to
-this."
+`org-ellipsis' and `truncate-string-ellipsis' are set to this."
   :type 'string
   :group '+fold)
 
@@ -100,15 +99,14 @@ this."
              evil-vimish-fold/delete evil-vimish-fold/delete-all
              evil-vimish-fold/create evil-vimish-fold/create-line)
   :init
-  (setq vimish-fold-dir (concat doom-cache-dir "vimish-fold/")
+  (setq vimish-fold-dir (file-name-concat doom-profile-cache-dir "vimish-fold/")
         vimish-fold-indication-mode 'right-fringe)
   :config
   (vimish-fold-global-mode +1))
 
 
-(use-package! ts-fold
-  :when (modulep! :tools tree-sitter)
-  :after tree-sitter
-  :config
-  (setq ts-fold-replacement +fold-ellipsis)
-  (global-ts-fold-mode +1))
+;; Will be autoloaded by fold commands
+(use-package! treesit-fold
+  :when (modulep! :tools tree-sitter -compat)
+  :defer t
+  :config (global-treesit-fold-mode +1))

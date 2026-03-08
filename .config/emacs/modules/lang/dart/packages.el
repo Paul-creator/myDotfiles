@@ -1,12 +1,18 @@
 ;; -*- no-byte-compile: t; -*-
 ;;; lang/dart/packages.el
 
-(package! dart-mode :pin "44beb628e5b4774062f7486008e06ae663e1ced0")
+(package! dart-mode :pin "773e9ebc74a258af2db395b01febfb652a42f3ab")
+
+(when (and (modulep! +tree-sitter) (treesit-available-p))
+  (package! dart-ts-mode
+    :recipe (:host github
+             :repo "50ways2sayhard/dart-ts-mode")
+    :pin "0e42336bf7d74546dfadf4060d918e2d81952e03"))
 
 (when (and (modulep! +lsp)
-           (not (modulep! :tools lsp +eglot)))
-  (package! lsp-dart :pin "9ffbafb7dcea3ef3d9e29bafb51d5167f0585d2c"))
+           (modulep! :tools lsp -eglot))
+  (package! lsp-dart :pin "166e4f2ba12403da5691d352b587c88d24ddb574"))
 
 (when (modulep! +flutter)
   (package! flutter :pin "e71235d400787d977da7ed792709437899c2a03c")
-  (package! hover :pin "4ca0638a14a8b304ac2b46e7b342b8d8732ad199"))
+  (package! hover :pin "1b380fa3951d78a9a9eda28a4bcb5a3536a100b9"))

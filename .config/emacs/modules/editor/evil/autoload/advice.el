@@ -85,7 +85,7 @@ more information on modifiers."
                 (setq evil-auto-indent nil)
                 (goto-char pos)
                 (let ((ws (abs (skip-chars-backward " \t"))))
-                  ;; FIXME oh god why
+                  ;; REVIEW: There must be a better way...
                   (save-excursion
                     (if comment-line-break-function
                         (funcall comment-line-break-function nil)
@@ -107,7 +107,7 @@ more information on modifiers."
                (if comment-line-break-function
                    (funcall comment-line-break-function nil)
                  (comment-indent-new-line)))
-              ;; TODO Find a better way to do this
+              ;; TODO: Find a better way to do this
               ((and (eq major-mode 'haskell-mode)
                     (fboundp 'haskell-indentation-newline-and-indent))
                (setq evil-auto-indent nil)
@@ -143,9 +143,9 @@ more information on modifiers."
   "Same as `evil-window-split', but correctly updates the window history."
   :repeat nil
   (interactive "P<f>")
-  ;; HACK This ping-ponging between the destination and source windows is to
-  ;;      update the window focus history, so that, if you close either split
-  ;;      afterwards you won't be sent to some random window.
+  ;; HACK: This ping-ponging between the destination and source windows is to
+  ;;   update the window focus history, so that, if you close either split
+  ;;   afterwards you won't be sent to some random window.
   (let ((origwin (selected-window))
         window-selection-change-functions)
     (select-window (split-window origwin count 'below))
@@ -162,9 +162,9 @@ more information on modifiers."
   "Same as `evil-window-split', but correctly updates the window history."
   :repeat nil
   (interactive "P<f>")
-  ;; HACK This ping-ponging between the destination and source windows is to
-  ;;      update the window focus history, so that, if you close either split
-  ;;      afterwards you won't be sent to some random window.
+  ;; HACK: This ping-ponging between the destination and source windows is to
+  ;;   update the window focus history, so that, if you close either split
+  ;;   afterwards you won't be sent to some random window.
   (let ((origwin (selected-window))
         window-selection-change-functions)
     (select-window (split-window origwin count 'right))
