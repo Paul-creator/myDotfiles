@@ -32,7 +32,8 @@
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
-(setq doom-theme 'doom-one)
+;; (setq doom-theme 'doom-one)
+(setq doom-theme 'doom-tokyo-night)
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
@@ -112,8 +113,20 @@
 (after! lsp-mode
   (setq lsp-vhdl-server 'vhdl-ls
         lsp-vhdl-server-path "/Users/paulkronegger/.local/bin/vhdl_ls_wrapper"
-        lsp-log-io t
-        lsp-auto-guess-root t))  ;; <- hilft bei Root-Erkennung
+        lsp-log-io t)
+
+  (defun paul/lsp-vhdl-root (dir)
+    (when (derived-mode-p 'vhdl-mode)
+      (locate-dominating-file dir "vhdl_ls.toml")))
+
+  (add-hook 'vhdl-mode-hook
+            (lambda ()
+              (setq-local lsp-auto-guess-root nil)
+              (setq-local lsp-project-root-functions '(paul/lsp-vhdl-root)))))
+
+(after! projectile
+  ;; damit doom/projectile dein vhdl-projekt korrekt als projekt erkennt
+  (add-to-list 'projectile-project-root-files "vhdl_ls.toml"))
 
 (after! projectile
   ;; damit Doom/Projectile dein VHDL-Projekt korrekt als Projekt erkennt
@@ -169,21 +182,13 @@
 (after! yasnippet
   (yas-global-mode 1))
 
-;; better looking neotree
+;; treemacs
+(after! treemacs
+  (treemacs-follow-mode 1)
+  (treemacs-project-follow-mode 1)
+  (treemacs-git-mode 'extended))
 (map! :leader
-      :n "e" #'neotree-toggle)
-(after! neotree
-  (setq neo-theme 'icons
-        neo-window-width 35
-        neo-smart-open t
-        neo-show-hidden-files t
-        neo-window-fixed-size nil
-        neo-vc-integration '(face)
-        all-the-icons-scale-factor 0.95)
-
-  (add-hook 'neo-after-create-hook
-            (lambda (&rest _)
-              (setq-local line-spacing 0.2))))
+      :n "e" #'+treemacs/toggle)
 
 ;; cmake
 (add-hook 'cmake-mode-local-vars-hook #'lsp!)

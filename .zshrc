@@ -60,7 +60,14 @@ complete -o nospace -C /opt/homebrew/bin/terraform terraform
 # java
 export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
 
-alias python="/opt/homebrew/bin/python3"
+# alias python="/opt/homebrew/bin/python3"
+python() {
+    if [ -n "$CONDA_PREFIX" ]; then
+        command python "$@"
+    else
+        /opt/homebrew/bin/python3 "$@"
+    fi
+}
 # pip() {
 #     if [ "$1" = "i" ]; then
 #         shift
@@ -140,7 +147,8 @@ export EDITOR='nvim'
 alias mux=tmuxinator
 
 # zoxide
-eval "$(zoxide init zsh)"
+# eval "$(zoxide init zsh)"
+eval "$(zoxide init zsh --cmd cd)"
 
 # emacs
 export PATH=$HOME/.config/emacs/bin:$PATH
@@ -418,6 +426,11 @@ alias youtube-transcript-de="yt-dlp --write-auto-sub --sub-lang de --convert-sub
 # dotfiles
 alias dot='git --git-dir=$HOME/.dotfiles --work-tree=$HOME'
 
+# nes praktikum sommersemseter 2026 
+# some env vars are set in .zshenv
+export STM32CubeMX_PATH=/Applications/STMicroelectronicsArm/STM32CubeMX.app/Contents/Resources
+# export STM32CubeMX_PATH=/Applications/STMicroelectronics/STM32CubeMX.app/Contents/Resources
+
 is_real_terminal() {
   [[ -z "$VSCODE_PID" ]] &&
   [[ "$TERM_PROGRAM" != "vscode" ]] &&
@@ -433,3 +446,5 @@ if is_real_terminal; then
 fi
 
 # zprof
+
+
