@@ -26,3 +26,10 @@ vim.api.nvim_create_autocmd("BufWritePost", {
     vim.cmd("edit")
   end,
 })
+
+-- vim.lsp.config("vhdl_ls", {
+--   cmd = { "/bin/bash", "/Users/paulkronegger/.local/bin/vhdl_ls_wrapper" },
+--   filetypes = { "vhdl" },
+--   root_markers = { "vhdl_ls.toml", ".vhdl_ls.toml" },
+--   single_file_support = false,
+-- })
