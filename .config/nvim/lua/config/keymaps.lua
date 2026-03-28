@@ -21,3 +21,11 @@ vim.keymap.set("n", "O", function()
     vim.fn.jobstart({ "open", "-R", path }, { detach = true })
   end
 end)
+
+-- save with(out) formatting
+vim.keymap.set("n", "<leader>fs", "<cmd>write<cr>", {
+  desc = "Save file",
+})
+vim.keymap.set("n", "<leader>fS", "<cmd>noautocmd write<cr>", {
+  desc = "Save file without formatting",
+})
