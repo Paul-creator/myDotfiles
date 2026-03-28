@@ -425,6 +425,11 @@ alias youtube-transcript-de="yt-dlp --write-auto-sub --sub-lang de --convert-sub
 
 # dotfiles
 alias dot='git --git-dir=$HOME/.dotfiles --work-tree=$HOME'
+alias lzdot='GIT_DIR=$HOME/.dotfiles GIT_WORK_TREE=$HOME lazygit'
+dot config --local status.showUntrackedFiles no
+dotu() {
+  dot status -uall -- "$1"
+}
 
 # nes praktikum sommersemseter 2026 
 # some env vars are set in .zshenv
