@@ -20,3 +20,37 @@ vim.g.root_spec = {
   { ".git", "lua" },
   "cwd",
 }
+
+-- Detect extensionless shell scripts by shebang
+vim.filetype.add({
+  pattern = {
+    [".*"] = {
+      function(path, bufnr)
+        -- Nur Dateien ohne Endung
+        if vim.fn.fnamemodify(path, ":e") ~= "" then
+          return nil
+        end
+
+        local first = vim.api.nvim_buf_get_lines(bufnr, 0, 1, false)[1] or ""
+
+        -- bash: #!/bin/bash, #!/usr/bin/env bash, #!/usr/bin/env -S bash ...
+        if first:match("^#!.*%f[%w]bash%f[%W]") then
+          return "sh", function(buf)
+            vim.b[buf].is_bash = 1
+          end
+        end
+
+        -- POSIX sh
+        if first:match("^#!.*%f[%w]sh%f[%W]") then
+          return "sh"
+        end
+
+        -- zsh
+        if first:match("^#!.*%f[%w]zsh%f[%W]") then
+          return "zsh"
+        end
+      end,
+      { priority = -math.huge },
+    },
+  },
+})
