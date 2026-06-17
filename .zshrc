@@ -433,7 +433,6 @@ dotu() {
 
 # nes praktikum sommersemseter 2026 
 # some env vars are set in .zshenv
-export STM32CubeMX_PATH=/Applications/STMicroelectronicsArm/STM32CubeMX.app/Contents/Resources
 # export STM32CubeMX_PATH=/Applications/STMicroelectronics/STM32CubeMX.app/Contents/Resources
 
 is_real_terminal() {
@@ -453,3 +452,5 @@ fi
 # zprof
 
 
+
+export STM32CubeMX_PATH=/Applications/STMicroelectronics/STM32CubeMXIntel.app/Contents/Resources
