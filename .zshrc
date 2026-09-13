@@ -5,8 +5,8 @@ ZSH_THEME="robbyrussell"
 plugins=(git zsh-autosuggestions zsh-syntax-highlighting z sudo)
 source $ZSH/oh-my-zsh.sh
 
-LANG="en_US.UTF-8"
-# LANG="en_AT.UTF-8" // this makes errors for kitty so äüö won't work
+export LANG="en_US.UTF-8"
+# exprot LANG="en_AT.UTF-8" // this makes errors for kitty so äüö won't work
 
 alias nano="nvim"
 
@@ -431,10 +431,6 @@ dotu() {
   dot status -uall -- "$1"
 }
 
-# nes praktikum sommersemseter 2026 
-# some env vars are set in .zshenv
-# export STM32CubeMX_PATH=/Applications/STMicroelectronics/STM32CubeMX.app/Contents/Resources
-
 is_real_terminal() {
   [[ -z "$VSCODE_PID" ]] &&
   [[ "$TERM_PROGRAM" != "vscode" ]] &&
@@ -445,12 +441,9 @@ is_real_terminal() {
 if is_real_terminal; then
   # cd "$HOME/Downloads"
   if command -v tmux >/dev/null 2>&1 && [ -z "$TMUX" ]; then
-      exec tmux 
+      exec tmux -u
   fi
 fi
 
 # zprof
 
-
-
-export STM32CubeMX_PATH=/Applications/STMicroelectronics/STM32CubeMXIntel.app/Contents/Resources
